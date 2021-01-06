@@ -1,0 +1,6 @@
+# CONFIGURATION FILE FOR THE SERVER
+name: some_name.pth
+model_path: path/to/model
+client_updates_path: ffolder/to/store/updates/from/client
+
+#DEEP LEARNING CONFIG?

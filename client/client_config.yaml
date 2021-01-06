@@ -1,0 +1,6 @@
+# CONFIGURATION FILE FOR CLIENT
+model_folder: path/to/model
+model_name: model_name.pth
+
+# CAN HAVE DEEP LEARNING CONFIG HERE ITSELF
+
