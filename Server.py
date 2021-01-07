@@ -1,3 +1,4 @@
+from os import path
 import socket
 import tqdm
 import threading
@@ -7,6 +8,16 @@ import pickle
 import secrets
 import sched
 import queue
+
+import numpy as np
+import torch
+import torchvision
+import matplotlib.pyplot as plt
+from time import time
+from torchvision import datasets, transforms
+from torch import nn, optim
+
+
 # QUERIES
 # MODEL - get latest model
 # CONFIG - get latest config
@@ -36,8 +47,10 @@ class Server:
         #CREATE LOCK OBJECT
         self.lock = threading.Lock()
 
+        self.global_update = False
+
         #SET UP QUEUE
-        self.queue = queue.Queue()
+        # self.queue = queue.Queue()
 
         # OPEN TOKEN DATA
         if os.path.isfile('tokens.pkl'): # TOKENS FILE EXISTS
@@ -87,7 +100,19 @@ class Server:
             
         # MODEL PATH
         if not os.path.isfile(yaml_data['model_path']):
-            print('\nERROR: UNABLE TO FIND MODEL, SERVER WILL STILL CONTINUE TO FUNCTION')
+            self.model_path = yaml_data['model_path']
+            print('\nERROR: UNABLE TO FIND MODEL, SERVER WILL CREATE MODEL')
+            input_size = 784
+            hidden_sizes = [128, 64]
+            output_size = 10
+
+            model = nn.Sequential(nn.Linear(input_size, hidden_sizes[0]),
+                                nn.ReLU(),
+                                nn.Linear(hidden_sizes[0], hidden_sizes[1]),
+                                nn.ReLU(),
+                                nn.Linear(hidden_sizes[1], output_size),
+                                nn.LogSoftmax(dim=1))
+            torch.save(model.state_dict(), self.model_path)
         else:
             self.model_path = yaml_data['model_path']
 
@@ -122,31 +147,45 @@ class Server:
             print('\nEXCEPTION IN send_token: ', e)
         return False
 
+    def check_global_update(self):
+        count = 0
+        for k,v in self.client_data.items():
+            if v == MODEL_SENT:
+                count+=1
+        if count == len(self.client_data.keys()):
+            self.global_update = False
+
+
 
     def send_model(self, conn, addr, token):
         try:
-            filepath = self.model_path
-            filename = os.path.basename(filepath)
-            filesize = os.path.getsize(filepath)
-            conn.send(f"{filename}{SEPARATOR}{filesize}".encode())
-            print('\nBUFFER SIZE: ', BUFFER_SIZE)
-            progress = tqdm.tqdm(range(filesize), "SENDING MODEL TO " + addr[0])
-            with open(filename, 'rb') as file:
-                while True:
-                    read = file.read(BUFFER_SIZE)
-                    if not read:
-                        break
-                    conn.sendall(read)
-                    progress.update(len(read))
+            if not os.path.isfile(self.client_updates_path + '/' + token + '.pth') or self.global_update:
+                filepath = self.model_path
+                filename = os.path.basename(filepath)
+                filesize = os.path.getsize(filepath)
+                conn.send(f"{filename}{SEPARATOR}{filesize}".encode())
+                print('\nBUFFER SIZE: ', BUFFER_SIZE, ' GLOBAL UPDATE: ', self.global_update)
+                progress = tqdm.tqdm(range(filesize), "SENDING MODEL TO " + addr[0])
+                with open(filepath, 'rb') as file:
+                    while True:
+                        read = file.read(BUFFER_SIZE)
+                        if not read:
+                            break
+                        conn.sendall(read)
+                        progress.update(len(read))
+                    
+                # GET LOCK AND WRITE TO CLIENT DATA
+                self.lock.acquire() # BLOCKS UNTIL LOCK IS ACQUIRED
+                self.client_data[token] = MODEL_SENT
+                self.save_client_data()
+                self.check_global_update()
+                # if self.check_client != None:
+                #     self.check_client() # RUN WITH BLOCKING
+                self.lock.release()
+            elif not self.global_update: # NOT UPDATED
+                conn.send(f"NOT_UPDATED".encode())
+                print('\nNOT SENDING UPDATE GLOBAL UPDATE: ', self.global_update)
                 
-            # GET LOCK AND WRITE TO CLIENT DATA
-            self.lock.acquire() # BLOCKS UNTIL LOCK IS ACQUIRED
-            self.client_data[token] = MODEL_SENT
-            self.save_client_data()
-            # if self.check_client != None:
-            #     self.check_client() # RUN WITH BLOCKING
-            self.lock.release()
-            
             
         except Exception as e:
             print('\nEXCEPTION IN send_model: ', e)
@@ -201,8 +240,8 @@ class Server:
             self.lock.acquire() # BLOCKS UNTIL LOCK IS ACQUIRED
             self.client_data[token] = MODEL_RECEIVED
             self.save_client_data()
-            if self.check_client != None:
-                self.check_client() # RUN WITH BLOCKING
+            # if self.check_client != None:
+            self.check_client() # RUN WITH BLOCKING
             self.lock.release()
             
 
@@ -239,9 +278,9 @@ class Server:
         elif query == 'UPDATE_MODEL':
             result = self.receive_updated_model(conn, addr, token)
         if result:
-            print("QUERY SUCCESSFULLY EXECUTED FOR: " + addr[0])
+            print("QUERY SUCCESSFULLY EXECUTED FOR: " + addr[0] + ' TOKEN: ' + token)
         else:
-            print("QUERY FAILED FOR: " + addr[0])
+            print("QUERY FAILED FOR: " + addr[0] + ' TOKEN: ' + token)
             # query = conn.recv(BUFFER_SIZE).decode()
         conn.close()
         

@@ -25,7 +25,7 @@ class Client:
         # MODEL FOLDER
         try:
             self.model_folder = yaml_data['model_folder']
-            if not os.path.isdir(self.model_path):
+            if not os.path.isdir(self.model_folder):
                 print('\nFOLDER UNAVAILABLE, CREATING FOLDER...')
                 try:
                     os.makedirs(self.model_folder)
@@ -91,8 +91,16 @@ class Client:
 
             print('SENT QUERY: ', query)
 
-            #RECEIVE DATA ON FILE
+            # OK RESPONSE
             data = self.s.recv(BUFFER_SIZE).decode()
+            print('\nRESPONSE FROM SERVER: ', data)
+            if data == 'NOT_UPDATED':
+                print('\nGOT NOT UPDATED RESPONSE\n')
+                return False
+            
+            #RECEIVE DATA ON FILE
+            # data = self.s.recv(BUFFER_SIZE).decode()
+
             filename, filesize = data.split(SEPARATOR)
             filesize = int(filesize)
             path = os.path.join(self.model_folder, self.model_name)
@@ -121,8 +129,9 @@ class Client:
             print('SENT QUERY: ', query)
 
             filename = self.model_name
-            filesize = os.path.getsize(filename)
             path = os.path.join(self.model_folder, self.model_name)
+            filesize = os.path.getsize(path)
+            print('CLIENT MODEL PATH: ', path)
             self.s.send(f"{filename}{SEPARATOR}{filesize}".encode())
             progress = tqdm.tqdm(range(filesize), "SENDING UPDATED MODEL TO SERVER")
             with open(path, 'rb') as file:
