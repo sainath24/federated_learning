@@ -35,23 +35,34 @@ class fl_server:
         input_size = 784
         hidden_sizes = [128, 64]
         output_size = 10
-        model = nn.Sequential(nn.Linear(input_size, hidden_sizes[0]),
-                      nn.ReLU(),
-                      nn.Linear(hidden_sizes[0], hidden_sizes[1]),
-                      nn.ReLU(),
-                      nn.Linear(hidden_sizes[1], output_size),
-                      nn.LogSoftmax(dim=1))
-        model.load_state_dict(torch.load(self.server.client_updates_path + '/' + models[0]))
-        state_dict = model.state_dict()
+        # model = nn.Sequential(nn.Linear(input_size, hidden_sizes[0]),
+        #               nn.ReLU(),
+        #               nn.Linear(hidden_sizes[0], hidden_sizes[1]),
+        #               nn.ReLU(),
+        #               nn.Linear(hidden_sizes[1], output_size),
+        #               nn.LogSoftmax(dim=1))
+        # model.load_state_dict(torch.load(self.server.client_updates_path + '/' + models[0]))
+        # state_dict = model.state_dict()
+        state_dict = torch.load(self.server.client_updates_path + '/' + models[0])
         for i in range(1, len(models)):
-            print('\nPLEASE DONT GO INSIDE')
-            model.load_state_dict(torch.load(self.server.client_updates_path + '/' + models[i]))
-            state_dict_2 = model.state_dict()
+            # print('\nPLEASE DONT GO INSIDE')
+            # model.load_state_dict(torch.load(self.server.client_updates_path + '/' + models[i]))
+            state_dict_2 = torch.load(self.server.client_updates_path + '/' + models[i])
+            print('\nADDING STATE DICTS\n')
             for key in state_dict:
+                print('\nSD1\n')
+                print(state_dict[key])
+                print('\nSD2\n')
+                print(state_dict_2[key])
                 state_dict[key] += state_dict_2[key]
+                print('\nSUM\n')
+                print(state_dict[key])
         
         for key in state_dict:
+            print('\nAVERAGING STATE DICTS\n')
+            print(state_dict[key])
             state_dict[key] /= total_models
+            print(state_dict[key])
 
         # SAVE GLOBAL UPDATE
         torch.save(state_dict, self.server.model_path)
@@ -73,9 +84,10 @@ class fl_server:
         print('\nTOTAL: ', client_data)
         if len(models) == len(client_data.keys()): # DO GLOBAL UPDATE
             self.global_update(models)
-
-        self.server.global_update = True
-        self.rounds -=1
+            self.server.global_update = True
+            self.rounds -=1
+        else:
+            self.global_update = False
         if self.rounds<0: # FL IS OVER
             print('\nFEDERATED LEARNING OVER')
             exit()
@@ -96,7 +108,7 @@ class fl_server:
             # CHECK IF YOU NEED TO UPDATE CENTRAL MODEL
             print('\nTOTAL CLIENTS: ', total_clients)
             print('\nWAITING CLIENTS: ', waiting_clients)
-            if waiting_clients == total_clients: # EVERYONE HAS SENT MODEL
+            if waiting_clients == total_clients and total_clients > 1: # EVERYONE HAS SENT MODEL
                 self.update_central(models)
 
         except Exception as e:
