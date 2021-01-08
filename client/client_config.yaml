@@ -4,3 +4,5 @@ model_name: client.pth
 
 # CAN HAVE DEEP LEARNING CONFIG HERE ITSELF
 
+HOST: '127.0.0.1'
+PORT: 9865

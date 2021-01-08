@@ -21,6 +21,9 @@ class Client:
         print('\nINITIALISING CLIENT...')
         with open('client_config.yaml') as file:
             yaml_data = yaml.safe_load(file)
+        print(yaml_data)
+        self.HOST = yaml_data['HOST']
+        self.PORT = yaml_data['PORT']
         
         # MODEL FOLDER
         try:
@@ -61,10 +64,10 @@ class Client:
         print('\nCLIENT INITIALISED')
     
 
-    def connect(self, host, port):
+    def connect(self):
         try:
             self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.s.connect((host, port))
+            self.s.connect((self.HOST, self.PORT))
             if os.path.isfile('token.pkl'): # TOKEN IS PRESENT
                 with open('token.pkl', 'rb') as file:
                     data = pickle.load(file)
