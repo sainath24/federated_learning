@@ -1,4 +1,3 @@
-from os import path
 import socket
 import tqdm
 import threading
@@ -8,15 +7,16 @@ import pickle
 import secrets
 import sched
 import queue
-
-import numpy as np
-import torch
 import torchvision
-import matplotlib.pyplot as plt
+import torch
+
+import Model as m
+import numpy as np
+
 from time import time
 from torchvision import datasets, transforms
 from torch import nn, optim
-
+from os import path
 
 # QUERIES
 # MODEL - get latest model
@@ -37,11 +37,8 @@ MODEL_RECEIVED = 2
 BUFFER_SIZE = 4096
 SEPARATOR = '&'
 
-# MODEL_NAME = 'model.pth'
-# CONFIG_NAME = 'config.yaml'
-
 class Server:
-    def __init__(self) -> None:
+    def __init__(self):
         super().__init__()
 
         #CREATE LOCK OBJECT
@@ -51,6 +48,7 @@ class Server:
 
         #SET UP QUEUE
         # self.queue = queue.Queue()
+
 
         # OPEN TOKEN DATA
         if os.path.isfile('tokens.pkl'): # TOKENS FILE EXISTS
@@ -70,6 +68,9 @@ class Server:
         print('\nINITIALISING SERVER...')
         with open('server_config.yaml') as file:
             yaml_data = yaml.safe_load(file)
+
+        self.HOST = yaml_data["HOST"]
+        self.PORT = yaml_data["PORT"]
         
         # CLIENT UPDATES FOLDER PATH
         try:
@@ -102,16 +103,8 @@ class Server:
         if not os.path.isfile(yaml_data['model_path']):
             self.model_path = yaml_data['model_path']
             print('\nERROR: UNABLE TO FIND MODEL, SERVER WILL CREATE MODEL')
-            input_size = 784
-            hidden_sizes = [128, 64]
-            output_size = 10
 
-            model = nn.Sequential(nn.Linear(input_size, hidden_sizes[0]),
-                                nn.ReLU(),
-                                nn.Linear(hidden_sizes[0], hidden_sizes[1]),
-                                nn.ReLU(),
-                                nn.Linear(hidden_sizes[1], output_size),
-                                nn.LogSoftmax(dim=1))
+            model = m.Model()
             torch.save(model.state_dict(), self.model_path)
         else:
             self.model_path = yaml_data['model_path']

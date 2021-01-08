@@ -3,4 +3,7 @@ name: BETA_TEST_V0.1
 model_path: GLOBAL/global_model.pth
 client_updates_path: CLIENT_UPDATES
 
+HOST: '127.0.0.1'
+PORT: 9865
+
 #DEEP LEARNING CONFIG?

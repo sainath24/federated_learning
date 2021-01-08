@@ -4,7 +4,6 @@ import threading
 import numpy as np
 import torch
 import torchvision
-import matplotlib.pyplot as plt
 from time import time
 from torchvision import datasets, transforms
 from torch import nn, optim
@@ -16,32 +15,11 @@ class fl_server:
         self.max_clients = max_client
         self.current_client = 0
         self.server = Server.Server()
-
-        input_size = 784
-        hidden_sizes = [128, 64]
-        output_size = 10
-
-        # self.global_model = nn.Sequential(nn.Linear(input_size, hidden_sizes[0]),
-        #               nn.ReLU(),
-        #               nn.Linear(hidden_sizes[0], hidden_sizes[1]),
-        #               nn.ReLU(),
-        #               nn.Linear(hidden_sizes[1], output_size),
-        #               nn.LogSoftmax(dim=1))
         # ACCESS CLIENT DATA WITH self.server.client_data
 
     def global_update(self, models):
         total_models = len(models)
-        sum = 0
-        input_size = 784
-        hidden_sizes = [128, 64]
-        output_size = 10
-        # model = nn.Sequential(nn.Linear(input_size, hidden_sizes[0]),
-        #               nn.ReLU(),
-        #               nn.Linear(hidden_sizes[0], hidden_sizes[1]),
-        #               nn.ReLU(),
-        #               nn.Linear(hidden_sizes[1], output_size),
-        #               nn.LogSoftmax(dim=1))
-        # model.load_state_dict(torch.load(self.server.client_updates_path + '/' + models[0]))
+        sum = 0 
         # state_dict = model.state_dict()
         state_dict = torch.load(self.server.client_updates_path + '/' + models[0])
         for i in range(1, len(models)):
@@ -50,19 +28,19 @@ class fl_server:
             state_dict_2 = torch.load(self.server.client_updates_path + '/' + models[i])
             print('\nADDING STATE DICTS\n')
             for key in state_dict:
-                print('\nSD1\n')
-                print(state_dict[key])
-                print('\nSD2\n')
-                print(state_dict_2[key])
+                # print('\nSD1\n')
+                # print(state_dict[key])
+                # print('\nSD2\n')
+                # print(state_dict_2[key])
                 state_dict[key] += state_dict_2[key]
-                print('\nSUM\n')
-                print(state_dict[key])
+                # print('\nSUM\n')
+                # print(state_dict[key])
         
         for key in state_dict:
-            print('\nAVERAGING STATE DICTS\n')
-            print(state_dict[key])
+            # print('\nAVERAGING STATE DICTS\n')
+            # print(state_dict[key])
             state_dict[key] /= total_models
-            print(state_dict[key])
+            # print(state_dict[key])
 
         # SAVE GLOBAL UPDATE
         torch.save(state_dict, self.server.model_path)
@@ -108,15 +86,15 @@ class fl_server:
             # CHECK IF YOU NEED TO UPDATE CENTRAL MODEL
             print('\nTOTAL CLIENTS: ', total_clients)
             print('\nWAITING CLIENTS: ', waiting_clients)
-            if waiting_clients == total_clients and total_clients > 1: # EVERYONE HAS SENT MODEL
+            if waiting_clients == total_clients : #and total_clients > 1: # EVERYONE HAS SENT MODEL
                 self.update_central(models)
 
         except Exception as e:
             print('check_client_data: ', e)
 
-    def start_server(self, host, port):
+    def start_server(self):
         try:
-            self.server.start(host, port, self.max_clients, self.check_client_data)
+            self.server.start(self.server.HOST, self.server.PORT, self.max_clients, self.check_client_data)
         except Exception as e:
             print('\nEXCEPTING in start_server: ' ,e)
 
@@ -124,17 +102,3 @@ class fl_server:
         # START SERVER ON SEPARATE THREAD
         server_thread = threading.Thread(target=self.start_server, args=[host, port])
         server_thread.start()
-
-
-
-
-
-
-
-        
-
-
-        
-
-
-        
