@@ -1,6 +1,6 @@
 # large files 
-.pth 
-.pkl
+*.pth 
+*.pkl
 
 # MAC
 *.DS_Store
