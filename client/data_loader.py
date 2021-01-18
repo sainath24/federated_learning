@@ -41,7 +41,7 @@ def get_classification_dataset(train_csv_file, train_path, train_transform, trai
     test_dataset = dl.ClassificationDataset(
         csv_file=test_csv_file, path=test_path, transform=test_transform, labels=test_labels)
 
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=train_bs, shuffle=True, num_workers=4)
-    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=test_bs, shuffle=False, num_workers=4)
+    train_loader = data.DataLoader(train_dataset, batch_size=train_bs, shuffle=True, num_workers=4)
+    test_loader = data.DataLoader(test_dataset, batch_size=test_bs, shuffle=False, num_workers=4)
 
     return train_loader, test_loader
