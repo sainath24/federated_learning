@@ -98,7 +98,7 @@ class fl_server:
         except Exception as e:
             print('\nEXCEPTING in start_server: ' ,e)
 
-    def start(self,host, port):
+    def start(self):
         # START SERVER ON SEPARATE THREAD
-        server_thread = threading.Thread(target=self.start_server, args=[host, port])
+        server_thread = threading.Thread(target=self.start_server)
         server_thread.start()

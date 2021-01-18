@@ -6,10 +6,16 @@ import torch
 class ClassificationDataset(data.Dataset):
 
     def __init__(self, csv_file, path, labels, transform=None):
+        """
+        :param: csv_file - path to csv file with format [Image, Label_Columns]
+        :param: path - image dir path
+        :param: labels - list of label columns 
+        :param: transorm - albumentations transforms
+        """
         
         self.path = path
         self.data = pd.read_csv(csv_file)
-        self.transform = transform
+        self.transform = transform 
         self.labels = labels
 
 
@@ -28,7 +34,7 @@ class ClassificationDataset(data.Dataset):
             
         if self.labels:
             labels = torch.tensor(
-                self.data.loc[idx, ['epidural', 'intraparenchymal', 'intraventricular', 'subarachnoid', 'subdural', 'any']])
+                self.data.loc[idx, self.labels])
             return {'image': img, 'labels': labels}   
 
         else:      
