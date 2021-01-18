@@ -113,13 +113,13 @@ def main():
 
     if ds_type == "classification": 
         train_loader, test_loader = dl.get_classification_dataset(
-            train_csv_file="",
-            train_path="", 
+            train_csv_file="D:\\fyp_data\\train_folds_0_to_3.csv.gz",
+            train_path="D:\\fyp_data\\proc", 
             train_transform=t.transform_train,
             train_labels=True,
             train_bs=32,
-            test_csv_file="",
-            test_pat="",
+            test_csv_file="D:\\fyp_data\\val_fold_4.csv.gz",
+            test_path="D:\\fyp_data\\proc",
             test_transform=t.transform_test,
             test_labels=False,
             test_bs=1

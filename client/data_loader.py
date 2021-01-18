@@ -1,6 +1,8 @@
-
+import pandas as pd
 from torch.utils import data
-
+import os
+import cv2
+import torch
 class ClassificationDataset(data.Dataset):
 
     def __init__(self, csv_file, path, labels, transform=None):
@@ -38,10 +40,9 @@ def get_classification_dataset(train_csv_file, train_path, train_transform, trai
     train_dataset = ClassificationDataset(
         csv_file=train_csv_file, path=train_path, transform=train_transform, labels=train_labels)
 
-    test_dataset = dl.ClassificationDataset(
+    test_dataset = ClassificationDataset(
         csv_file=test_csv_file, path=test_path, transform=test_transform, labels=test_labels)
-
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=train_bs, shuffle=True, num_workers=4)
-    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=test_bs, shuffle=False, num_workers=4)
+    train_loader = data.DataLoader(train_dataset, batch_size=train_bs, shuffle=True, num_workers=0)
+    test_loader = data.DataLoader(test_dataset, batch_size=test_bs, shuffle=False, num_workers=0)
 
     return train_loader, test_loader
