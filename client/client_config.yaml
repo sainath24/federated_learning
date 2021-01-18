@@ -4,5 +4,5 @@ model_name: client.pth
 
 # CAN HAVE DEEP LEARNING CONFIG HERE ITSELF
 
-HOST: "0.tcp.ngrok.io"
-PORT: 14966
+HOST: "2.tcp.ngrok.io"
+PORT: 10987

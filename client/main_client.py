@@ -90,8 +90,17 @@ from torch.utils.data import Subset
 
 def main(): 
     epochs = 15
+    
+    lr = 0.00002
     ds_type = "classification"
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+
+    if device.type == 'cuda':
+        print(torch.cuda.get_device_name(0))
+        print('Memory Usage:')
+        print('Allocated:', round(torch.cuda.memory_allocated(0)/10243,1), 'GB')
+        print('Cached:   ', round(torch.cuda.memory_reserved(0)/10243,1), 'GB')
+        
     labels = ['epidural', 'intraparenchymal', 'intraventricular', 'subarachnoid', 'subdural', 'any']
     
     client = Client.Client()
@@ -102,13 +111,14 @@ def main():
 
     # GET MODEL
     model = m.Model()
-
+    
     model.load_state_dict(torch.load(
         client.model_folder + '/' + client.model_name))
 
-    criterion = nn.NLLLoss()
-    optimizer = optim.SGD(model.parameters(), lr=0.003, momentum=0.9)
-
+    criterion = torch.nn.BCEWithLogitsLoss()
+    plist = [{'params': model.parameters(), 'lr': lr}]
+    optimizer = optim.Adam(plist)
+    print(optimizer)
 
     time0 = time()
 
@@ -125,16 +135,15 @@ def main():
             test_labels=[],
             test_bs=1
         )
-
     for epoch in range(epochs):
-    
+        
         print('Epoch {}/{}'.format(epoch, epochs - 1))
         print('-' * 10)
         running_loss = 0
         # TRAIN 
         running_loss += train.train(model, train_loader, optimizer, criterion, epochs, device)
 
-        print("Epoch {} - Training loss: {}".format(e, running_loss/len(train_loader)))
+        print("Epoch {} - Training loss: {}".format(epoch, running_loss/len(train_loader)))
         temp1 = deepcopy(model)
         # print(sd1)
 
