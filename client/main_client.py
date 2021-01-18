@@ -92,6 +92,7 @@ def main():
     epochs = 15
     ds_type = "classification"
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    labels = ['epidural', 'intraparenchymal', 'intraventricular', 'subarachnoid', 'subdural', 'any']
     
     client = Client.Client()
     client.connect()
@@ -116,12 +117,12 @@ def main():
             train_csv_file="",
             train_path="", 
             train_transform=t.transform_train,
-            train_labels=True,
+            train_labels=labels,
             train_bs=32,
             test_csv_file="",
             test_pat="",
             test_transform=t.transform_test,
-            test_labels=False,
+            test_labels=[],
             test_bs=1
         )
 
@@ -162,8 +163,6 @@ def main():
         print('\nMODELS SAME')
         
     print("\nTraining Time (in minutes) =", (time()-time0)/60)
-
-
 
 
 if __name__ == "__main__":
