@@ -23,17 +23,17 @@ from os import path
 # CONFIG - get latest config
 # UPDATE_MODEL - send updated model
 
-# CLIENT DATA
-# 1 - MODEL SENT
-# 2 - MODEL RECEIVED
-MODEL_SENT = 1
-MODEL_RECEIVED = 2
+## CLIENT STATUS
+NEW_CLIENT = 0
+GLOBAL_MODEL_SENT = 1
+LOCAL_MODEL_RECEIVED = 2
 
 #TODO
 # WRTIE YAML STUFF, get host and port as well
 # SETUP SERVER WITH YAML
 # DEEP LEARNING STUFF
 
+TOKEN_BUFFER_SIZE = 8
 BUFFER_SIZE = 4096
 SEPARATOR = '&'
 
@@ -43,18 +43,12 @@ class Server:
 
         #CREATE LOCK OBJECT
         self.lock = threading.Lock()
-
         self.global_update = False
-
-        #SET UP QUEUE
-        # self.queue = queue.Queue()
-
 
         # OPEN TOKEN DATA
         if os.path.isfile('tokens.pkl'): # TOKENS FILE EXISTS
             with open('tokens.pkl', 'rb') as file:
                 self.tokens = pickle.load(file)
-            
         else:
             self.tokens = {} # CREATE EMPTY TOKENS LIST
 
@@ -131,6 +125,8 @@ class Server:
         try:
             # GENERATE NEW TOKEN
             token = secrets.token_hex(8)
+            while token in self.tokens.keys():
+                token = secrets.token_hex(8)
             self.tokens[token] = addr[0]
             self.save_tokens()
             # SEND TOKEN TO CLIENT
@@ -143,12 +139,10 @@ class Server:
     def check_global_update(self):
         count = 0
         for k,v in self.client_data.items():
-            if v == MODEL_SENT:
+            if v == GLOBAL_MODEL_SENT:
                 count+=1
         if count == len(self.client_data.keys()):
             self.global_update = False
-
-
 
     def send_model(self, conn, addr, token):
         try:
@@ -169,14 +163,14 @@ class Server:
                     
                 # GET LOCK AND WRITE TO CLIENT DATA
                 self.lock.acquire() # BLOCKS UNTIL LOCK IS ACQUIRED
-                self.client_data[token] = MODEL_SENT
+                self.client_data[token] = GLOBAL_MODEL_SENT
                 self.save_client_data()
                 self.check_global_update()
                 # if self.check_client != None:
                 #     self.check_client() # RUN WITH BLOCKING
                 self.lock.release()
             elif not self.global_update: # NOT UPDATED
-                conn.send(f"NOT_UPDATED".encode())
+                conn.sendall(f"NO_UPDATE".encode())
                 print('\nNOT SENDING UPDATE GLOBAL UPDATE: ', self.global_update)
                 
             
@@ -207,8 +201,6 @@ class Server:
         return True
     
     def receive_updated_model(self, conn, addr, token):
-        # TODO:
-        # SET UPDATES COUNTER TO UPDTAE GRADIENT
         try:
             #RECEIVE DATA ON FILE
             data = conn.recv(BUFFER_SIZE).decode()
@@ -231,7 +223,7 @@ class Server:
 
             # GET LOCK AND WRITE TO CLIENT DATA
             self.lock.acquire() # BLOCKS UNTIL LOCK IS ACQUIRED
-            self.client_data[token] = MODEL_RECEIVED
+            self.client_data[token] = LOCAL_MODEL_RECEIVED
             self.save_client_data()
             # if self.check_client != None:
             self.check_client() # RUN WITH BLOCKING
@@ -248,27 +240,24 @@ class Server:
         # HANDLES CLIENT, OPEN A SEPARATE THREAD FOR EVERY CLIENT
         print('\nCONNECT TO CLIENT: ' + addr[0])
         result = False
-        token = conn.recv(BUFFER_SIZE).decode() #GET TOKEN
-        # while query!='DISCONNECT':
+        token = conn.recv(TOKEN_BUFFER_SIZE).decode() #GET TOKEN
         print('\nRECEIVED TOKEN: ' + token)
-        #HANDLE TOKEN FIRST
-        if token == 'TOKEN': # NEW CLIENT, SEND TOKEN
+        if token == '00000000': # NEW CLIENT, SEND TOKEN
             token = self.send_token(conn, addr)
             if not token:
                 print('\nERROR IN SENDING TOKEN')
-
         else: # received token
             conn.send(f"TOKEN_OK".encode())
             if token not in self.client_data.keys(): # INSERT CLIENT TOKEN IN DICTIONARY
-                self.client_data[token] = ''
+                self.client_data[token] = NEW_CLIENT
 
-        # HANDLE MAIN QUERIES
-        query = conn.recv(BUFFER_SIZE).decode() #GET QUERY
-        if query == 'MODEL':
+        # HANDLE CLIENT 
+        client_status = self.client_data[token]
+        if client_status == NEW_CLIENT or client_status == LOCAL_MODEL_RECEIVED:
             result = self.send_model(conn, addr, token)
-        elif query == 'CONFIG':
-            result = self.send_config(conn, addr, token)
-        elif query == 'UPDATE_MODEL':
+        # elif client_status == FRESH_CLIENT: # TODO: Handle sending config for fresh client
+        #     result = self.send_config(conn, addr, token)
+        elif client_status == GLOBAL_MODEL_SENT:
             result = self.receive_updated_model(conn, addr, token)
         if result:
             print("QUERY SUCCESSFULLY EXECUTED FOR: " + addr[0] + ' TOKEN: ' + token)
@@ -277,11 +266,11 @@ class Server:
             # query = conn.recv(BUFFER_SIZE).decode()
         conn.close()
         
-    def start(self, host, port, connections,check_client_data = None):
+    def start(self, connections,check_client_data = None):
         
         try:
             self.check_client = check_client_data
-            self.s.bind((host, port))
+            self.s.bind((self.HOST, self.PORT))
             self.s.listen(connections)
             print('\nSERVER STARTED\n')
             while True:

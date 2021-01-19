@@ -9,6 +9,7 @@ import pickle
 # CONFIG - get latest config
 # UPDATE_MODEL - send updated model
 
+TOKEN_BUFFER_SIZE = 8
 BUFFER_SIZE = 4096
 SEPARATOR = '&'
 
@@ -71,11 +72,11 @@ class Client:
                 with open('token.pkl', 'rb') as file:
                     data = pickle.load(file)
                     self.s.send(data.encode())
-                    status = self.s.recv(BUFFER_SIZE) # RECEIVE TOKEN_OK from server
+                    status = self.s.recv(TOKEN_BUFFER_SIZE) # RECEIVE TOKEN_OK from server
             else: # NEW CLIENT, REQUEST TOKEN
-                query = 'TOKEN'
+                query = '00000000'
                 self.s.send(query.encode())
-                token = self.s.recv(BUFFER_SIZE).decode()
+                token = self.s.recv(TOKEN_BUFFER_SIZE).decode()
                 with open('token.pkl', 'wb') as file:
                     pickle.dump(token, file) # SAVE TOKEN FOR FUTURE USE
 
@@ -85,24 +86,16 @@ class Client:
             return False
         return True
 
-    def get(self, query):
-        # SEND QUERY
-        print('\nQUERY: ' + query)
+    def get(self):
         try:
-            self.s.send(query.encode())
-
-            print('SENT QUERY: ', query)
-
             # OK RESPONSE
             data = self.s.recv(BUFFER_SIZE).decode()
             print('\nRESPONSE FROM SERVER: ', data)
-            if data == 'NOT_UPDATED':
+            if data == 'NO_UPDATE':
                 print('\nGOT NOT UPDATED RESPONSE\n')
                 return False
-            
-            #RECEIVE DATA ON FILE
-            # data = self.s.recv(BUFFER_SIZE).decode()
 
+            # UPDATE AVAILABLE
             filename, filesize = data.split(SEPARATOR)
             filesize = int(filesize)
             path = os.path.join(self.model_folder, self.model_name)
@@ -110,7 +103,7 @@ class Client:
             print('\nRECEIVED INFO: ', filename, ' SIZE: ', filesize)
 
             #RECEIVE FILE
-            progress = tqdm.tqdm(range(filesize), "RECEIVING " + query)
+            progress = tqdm.tqdm(range(filesize), "RECEIVING " + filename)
             with open(path, 'wb') as file:
                 while True:
                     data = self.s.recv(BUFFER_SIZE)
@@ -125,11 +118,8 @@ class Client:
         # self.s.close()
         return True
 
-    def send(self, query): #SEND UPDATED MODEL
+    def send(self): #SEND UPDATED MODEL
         try:
-            self.s.send(query.encode())
-            print('SENT QUERY: ', query)
-
             filename = self.model_name
             path = os.path.join(self.model_folder, self.model_name)
             filesize = os.path.getsize(path)
