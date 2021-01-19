@@ -65,7 +65,7 @@ def main():
     criterion = torch.nn.BCEWithLogitsLoss()
     optim_params = [{'params': model.parameters(), 'lr': lr}]
     if config["optimizer"]=="SGD": 
-        optimizer = optim.Adam(optim_params)
+        optimizer = optim.SGD(optim_params)
     elif config["optimizer"]=="Adam":
         optimizer = optim.Adam(optim_params)
     else: 
