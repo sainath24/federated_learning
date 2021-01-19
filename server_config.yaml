@@ -6,4 +6,7 @@ client_updates_path: CLIENT_UPDATES
 HOST: '127.0.0.1'
 PORT: 9865
 
-#DEEP LEARNING CONFIG?
+#DEEP LEARNING CONFIG
+
+arch: 'resnext101_32x8d'
+n_classes: 6

@@ -57,7 +57,7 @@ def main():
     print('\nSAVED GLOBAL MODEL')
 
     # GET MODEL
-    model = m.Model()
+    model = m.Model(config["arch"], n_classes)
 
     model.load_state_dict(torch.load(
         client.model_folder + '/' + client.model_name))

@@ -7,5 +7,4 @@ import fl_server
 # PORT = 9865
 
 server = fl_server.fl_server()
-# server.start(HOST, PORT)
 server.start()

@@ -67,15 +67,15 @@ class Server:
 
         print('\nINITIALISING SERVER...')
         with open('server_config.yaml') as file:
-            yaml_data = yaml.safe_load(file)
+            config = yaml.safe_load(file)
 
-        self.HOST = yaml_data["HOST"]
-        self.PORT = yaml_data["PORT"]
+        self.HOST = config["HOST"]
+        self.PORT = config["PORT"]
         
         # CLIENT UPDATES FOLDER PATH
         try:
-            self.client_updates_path = yaml_data['client_updates_path']
-            print('\nCLIENT UPDATES FOLDER FOUND:', yaml_data['client_updates_path'])
+            self.client_updates_path = config['client_updates_path']
+            print('\nCLIENT UPDATES FOLDER FOUND:', config['client_updates_path'])
             if not os.path.isdir(self.client_updates_path):
                 print('\nPATH NOT FOUND, CREATING FOLDER')
                 try:
@@ -100,14 +100,14 @@ class Server:
             self.client_updates_path = 'CLIENT_UPDATES'
             
         # MODEL PATH
-        if not os.path.isfile(yaml_data['model_path']):
-            self.model_path = yaml_data['model_path']
+        if not os.path.isfile(config['model_path']):
+            self.model_path = config['model_path']
             print('\nERROR: UNABLE TO FIND MODEL, SERVER WILL CREATE MODEL')
 
-            model = m.Model()
+            model = m.Model(config["arch"], config["n_classes"])
             torch.save(model.state_dict(), self.model_path)
         else:
-            self.model_path = yaml_data['model_path']
+            self.model_path = config['model_path']
 
         #TODO:
         # CONFIG FILE FOR DEEP LEARNING
