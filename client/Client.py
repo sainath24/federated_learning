@@ -1,4 +1,3 @@
-from server.Server import TOKEN_BUFFER_SIZE
 import socket
 import tqdm
 import yaml
