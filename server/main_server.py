@@ -5,7 +5,10 @@ Starts the server.
 import fl_server
 
 def main():
-    server = fl_server.fl_server()
+    with open('server_config.yaml') as file:
+        config = yaml.safe_load(file)
+    
+    server = fl_server.fl_server(config)
     server.start()
 
 if __name__ == "__main__":

@@ -4,8 +4,6 @@
 
 2. Add SSL to Socket
 
-3. Shift to asyncio
-
 # Considerations
 
 1. YAML or .py config?

@@ -38,9 +38,9 @@ BUFFER_SIZE = 4096
 SEPARATOR = '&'
 
 class Server:
-    def __init__(self):
+    def __init__(self, config):
         super().__init__()
-
+        self.config = config
         #CREATE LOCK OBJECT
         self.lock = threading.Lock()
         self.global_update = False
@@ -60,16 +60,14 @@ class Server:
             self.client_data = {} # STORE CLIENT INFO
 
         print('\nINITIALISING SERVER...')
-        with open('server_config.yaml') as file:
-            config = yaml.safe_load(file)
 
-        self.HOST = config["HOST"]
-        self.PORT = config["PORT"]
+        self.HOST = self.config["HOST"]
+        self.PORT = self.config["PORT"]
         
         # CLIENT UPDATES FOLDER PATH
         try:
-            self.client_updates_path = config['client_updates_path']
-            print('\nCLIENT UPDATES FOLDER FOUND:', config['client_updates_path'])
+            self.client_updates_path = self.config['client_updates_path']
+            print('\nCLIENT UPDATES FOLDER FOUND:', self.config['client_updates_path'])
             if not os.path.isdir(self.client_updates_path):
                 print('\nPATH NOT FOUND, CREATING FOLDER')
                 try:
@@ -94,14 +92,14 @@ class Server:
             self.client_updates_path = 'CLIENT_UPDATES'
             
         # MODEL PATH
-        if not os.path.isfile(config['model_path']):
-            self.model_path = config['model_path']
+        if not os.path.isfile(self.config['model_path']):
+            self.model_path = self.config['model_path']
             print('\nERROR: UNABLE TO FIND MODEL, SERVER WILL CREATE MODEL')
 
-            model = m.Model(config["arch"], config["n_classes"])
+            model = m.Model(self.config["arch"], self.config["n_classes"])
             torch.save(model.state_dict(), self.model_path)
         else:
-            self.model_path = config['model_path']
+            self.model_path = self.config['model_path']
 
         #TODO:
         # CONFIG FILE FOR DEEP LEARNING

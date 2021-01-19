@@ -12,12 +12,13 @@ from torchvision import datasets, transforms
 from torch import nn, optim
 
 class fl_server:
-    def __init__(self, rounds = 15, max_client = 5) -> None:
+    def __init__(self, config) -> None:
         super().__init__()
-        self.rounds = rounds
-        self.max_clients = max_client
+        self.config = config
+        self.rounds = self.config['rounds']
+        self.max_clients = self.config['max_clients']
         self.current_client = 0
-        self.server = Server.Server()
+        self.server = Server.Server(self.config)
         # ACCESS CLIENT DATA WITH self.server.client_data
 
     def global_update(self, models):
@@ -25,7 +26,11 @@ class fl_server:
         sum = 0 
         model_paths = [os.path.join(self.server.client_updates_path, model_path)
                              for model_path in models]
-        averaged_state_dict = agg.average(model_paths)
+        if self.config['aggregation']=='mean': 
+            averaged_state_dict = agg.average(model_paths)
+        else: 
+            # default is FedAvg
+            averaged_state_dict = agg.average(model_paths)
 
         # SAVE GLOBAL UPDATE
         torch.save(averaged_state_dict, self.server.model_path)

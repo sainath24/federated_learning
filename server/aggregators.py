@@ -18,16 +18,7 @@ def average(model_paths):
         state_dict_2 = torch.load(model_paths[i])
 
         for key in state_dict:
-            # print('\nSD1\n')
-            # print(state_dict[key])
-            # print('\nSD2\n')
-            # print(state_dict_2[key])
             state_dict[key] += state_dict_2[key]
-            # print('\nSUM\n')
-            # print(state_dict[key])
     for key in state_dict:
-        # print('\nAVERAGING STATE DICTS\n')
-        # print(state_dict[key])
         state_dict[key] /= total_models
-        # print(state_dict[key])
     return state_dict
