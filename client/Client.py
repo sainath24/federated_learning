@@ -16,18 +16,17 @@ SEPARATOR = '&'
 # CONFIG_NAME = 'config.yaml'
 
 class Client:
-    def __init__(self):
+    def __init__(self, config):
         super().__init__()
         print('\nINITIALISING CLIENT...')
-        with open('client_config.yaml') as file:
-            yaml_data = yaml.safe_load(file)
-        print(yaml_data)
-        self.HOST = yaml_data['HOST']
-        self.PORT = yaml_data['PORT']
+        print("CONFIG:")
+        print(config)
+        self.HOST = config['HOST']
+        self.PORT = config['PORT']
         
         # MODEL FOLDER
         try:
-            self.model_folder = yaml_data['model_folder']
+            self.model_folder = config['model_folder']
             if not os.path.isdir(self.model_folder):
                 print('\nFOLDER UNAVAILABLE, CREATING FOLDER...')
                 try:
@@ -53,7 +52,7 @@ class Client:
 
         # MODEL NAME
         try:
-            self.model_name = yaml_data['model_name']
+            self.model_name = config['model_name']
             print('MODEL NAME: ', self.model_name)
         except Exception as e:
             print('\nMODEL NAME NOT FOUND, USING DEFAULT NAME model.pth')
