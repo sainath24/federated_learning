@@ -35,7 +35,7 @@ def main():
     lr = config['lr']
     ds_type = config['dataset']
     if config['device']:
-        device = config['device']
+        device = torch.device(config['device'])
     else:
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
