@@ -1,10 +1,12 @@
 import Server
 import threading
 import os
-
-import numpy as np
 import torch
 import torchvision
+
+import numpy as np
+import aggregators as agg
+
 from time import time
 from torchvision import datasets, transforms
 from torch import nn, optim
@@ -23,29 +25,10 @@ class fl_server:
         sum = 0 
         model_paths = [os.path.join(self.server.client_updates_path, model_path)
                              for model_path in models]
-        state_dict = torch.load(self.server.client_updates_path + '/' + models[0])
-        for i in range(1, len(models)):
-            # print('\nPLEASE DONT GO INSIDE')
-            # model.load_state_dict(torch.load(self.server.client_updates_path + '/' + models[i]))
-            state_dict_2 = torch.load(self.server.client_updates_path + '/' + models[i])
-            print('\nADDING STATE DICTS\n')
-            for key in state_dict:
-                # print('\nSD1\n')
-                # print(state_dict[key])
-                # print('\nSD2\n')
-                # print(state_dict_2[key])
-                state_dict[key] += state_dict_2[key]
-                # print('\nSUM\n')
-                # print(state_dict[key])
-        
-        for key in state_dict:
-            # print('\nAVERAGING STATE DICTS\n')
-            # print(state_dict[key])
-            state_dict[key] /= total_models
-            # print(state_dict[key])
+        averaged_state_dict = agg.average(model_paths)
 
         # SAVE GLOBAL UPDATE
-        torch.save(state_dict, self.server.model_path)
+        torch.save(averaged_state_dict, self.server.model_path)
         print('\nNEW GLOBAL MODEL MADEEEEE')
             
 
