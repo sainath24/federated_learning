@@ -1,10 +1,8 @@
-import socket
-# import Client
-import Server
 import fl_server
 
-# HOST = '127.0.0.1'
-# PORT = 9865
+def main():
+    server = fl_server.fl_server()
+    server.start()
 
-server = fl_server.fl_server()
-server.start()
+if __name__ == "__main__":
+    main()
