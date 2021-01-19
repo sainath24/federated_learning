@@ -1,11 +1,14 @@
 import socket
-import Client
 import torch
 import torchvision
+import yaml
+
+import train
+import Client
 
 import numpy as np
-import train
-import Model as m
+
+import model as m
 import data_loader as dl
 import transforms as t
 
@@ -15,95 +18,39 @@ from torch import nn, optim
 from copy import deepcopy
 from torch.utils.data import Subset
 
+def check_model_similarity(model1, model2): 
+    """
+    Check if two models are the same.
+    """
+    for p1, p2 in zip(model1.parameters(), model2.parameters()):
+        if p1.data.ne(p2.data).sum() > 0:
+            print('\nMODELS NOT SAME')
+        print('\nMODELS SAME')
 
-# HOST = '127.0.0.1'
-# PORT = 9865
+def main():
+    with open('client_config.yaml') as file:
+        config = yaml.safe_load(file)
+    epochs = config['epochs']
 
-# for e in range(epochs):
-#     running_loss = 0
-#     for images, labels in train_loader:
-#         # Flatten MNIST images into a 784 long vector
-#         images = images.view(images.shape[0], -1)
+    lr = config['lr']
+    ds_type = config['dataset']
+    if config['device']:
+        device = config['device']
+    else:
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-#         # Training pass
-#         optimizer.zero_grad()
-
-#         output = model(images)
-#         loss = criterion(output, labels)
-
-#         # This is where the model learns by backpropagating
-#         loss.backward()
-
-#         # And optimizes its weights here
-#         optimizer.step()
-
-#         running_loss += loss.item()
-#     # else:
-#     print("Epoch {} - Training loss: {}".format(e, running_loss/len(train_loader)))
-#     temp1 = deepcopy(model)
-#     # print(sd1)
-#     # SEND TO SERVER
-#     torch.save(model.state_dict(), client.model_folder +
-#                '/' + client.model_name)
-#     client.connect()
-#     client.send('UPDATE_MODEL')
-
-#     # RECEIVE FROM SERVER
-#     client.connect()
-#     result = client.get('MODEL')
-#     while result == False:
-#         print('\nSERVER HAS NOT UPDATED GLOBAL')
-#         sleep(5)
-#         client.connect()
-#         result = client.get('MODEL')
-
-#     model.load_state_dict(torch.load(
-#         client.model_folder + '/' + client.model_name))
-#     # print(model.state_dict())
-#     for p1, p2 in zip(temp1.parameters(), model.parameters()):
-#         if p1.data.ne(p2.data).sum() > 0:
-#             print('\nMODELS NOT SAME')
-#     print('\nMODELS SAME')
-
-
-# print("\nTraining Time (in minutes) =", (time()-time0)/60)
-
-# # EVALUATION
-# correct_count, all_count = 0, 0
-# for images, labels in val_loader:
-#     for i in range(len(labels)):
-#         img = images[i].view(1, 784)
-#         with torch.no_grad():
-#             logps = model(img)
-
-#         ps = torch.exp(logps)
-#         probab = list(ps.numpy()[0])
-#         pred_label = probab.index(max(probab))
-#         true_label = labels.numpy()[i]
-#         if(true_label == pred_label):
-#             correct_count += 1
-#         all_count += 1
-
-# print("Number Of Images Tested =", all_count)
-# print("\nModel Accuracy =", (correct_count/all_count))
-
-
-def main(): 
-    epochs = 15
-    
-    lr = 0.00002
-    ds_type = "classification"
-    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
     if device.type == 'cuda':
         print(torch.cuda.get_device_name(0))
         print('Memory Usage:')
-        print('Allocated:', round(torch.cuda.memory_allocated(0)/10243,1), 'GB')
-        print('Cached:   ', round(torch.cuda.memory_reserved(0)/10243,1), 'GB')
-        
-    labels = ['epidural', 'intraparenchymal', 'intraventricular', 'subarachnoid', 'subdural', 'any']
+        print('Allocated:', round(torch.cuda.memory_allocated(0)/10243, 1), 'GB')
+        print('Cached:   ', round(torch.cuda.memory_reserved(0)/10243, 1), 'GB')
     
-    client = Client.Client()
+    labels = config['labels']
+    n_classes = config['n_classes']
+    assert len(labels)==n_classes, "ERR: Number of classes should match labels."
+
+    client = Client.Client(config)
     client.connect()
     print('\nCONNECTED TO SERVER')
     client.get('MODEL')
@@ -111,46 +58,51 @@ def main():
 
     # GET MODEL
     model = m.Model()
-    
+
     model.load_state_dict(torch.load(
         client.model_folder + '/' + client.model_name))
 
     criterion = torch.nn.BCEWithLogitsLoss()
-    plist = [{'params': model.parameters(), 'lr': lr}]
-    optimizer = optim.Adam(plist)
-    print(optimizer)
+    optim_params = [{'params': model.parameters(), 'lr': lr}]
+    if config["optimizer"]=="SGD": 
+        optimizer = optim.Adam(optim_params)
+    elif config["optimizer"]=="Adam":
+        optimizer = optim.Adam(optim_params)
+    else: 
+        # default
+        optimizer = optim.Adam(optim_params)
 
     time0 = time()
 
-    if ds_type == "classification": 
+    if ds_type == "classification":
         train_loader, test_loader = dl.get_classification_dataset(
-            train_csv_file="D:\\fyp_data\\train_folds_0_to_3.csv.gz",
-            train_path="D:\\fyp_data\\proc", 
+            train_csv_file=config["train_csv_file"],
+            train_path=config["train_path"],
             train_transform=t.transform_train,
             train_labels=labels,
-            train_bs=32,
-            test_csv_file="D:\\fyp_data\\val_fold_4.csv.gz",
-            test_path="D:\\fyp_data\\proc",
+            train_bs=config["train_batch_size"],
+            test_csv_file=config["test_csv_file"],
+            test_path=config["test_path"],
             test_transform=t.transform_test,
             test_labels=[],
-            test_bs=1
+            test_bs=config["test_batch_size"]
         )
     for epoch in range(epochs):
-        
+
         print('Epoch {}/{}'.format(epoch, epochs - 1))
         print('-' * 10)
         running_loss = 0
-        # TRAIN 
-        running_loss += train.train(model, train_loader, optimizer, criterion, epochs, device)
+        # TRAIN
+        running_loss += train.train(model, train_loader,
+                                    optimizer, criterion, epochs, device)
 
-        print("Epoch {} - Training loss: {}".format(epoch, running_loss/len(train_loader)))
+        print("Epoch {} - Training loss: {}".format(epoch,
+                                                    running_loss/len(train_loader)))
         temp1 = deepcopy(model)
-        # print(sd1)
-
 
         # SEND TO SERVER
         torch.save(model.state_dict(), client.model_folder +
-                '/' + client.model_name)
+                   '/' + client.model_name)
         client.connect()
         client.send('UPDATE_MODEL')
 
@@ -165,12 +117,8 @@ def main():
 
         model.load_state_dict(torch.load(
             client.model_folder + '/' + client.model_name))
-        # print(model.state_dict())
-        for p1, p2 in zip(temp1.parameters(), model.parameters()):
-            if p1.data.ne(p2.data).sum() > 0:
-                print('\nMODELS NOT SAME')
-        print('\nMODELS SAME')
-        
+        check_model_similarity(temp1, model)
+
     print("\nTraining Time (in minutes) =", (time()-time0)/60)
 
 
