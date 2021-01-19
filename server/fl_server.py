@@ -84,7 +84,7 @@ class fl_server:
 
     def start_server(self):
         try:
-            self.server.start(self.server.HOST, self.server.PORT, self.max_clients, self.check_client_data)
+            self.server.start(self.max_clients, self.check_client_data)
         except Exception as e:
             print('\nEXCEPTING in start_server: ' ,e)
 
