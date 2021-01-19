@@ -1,5 +1,6 @@
 import Server
 import threading
+import os
 
 import numpy as np
 import torch
@@ -20,7 +21,8 @@ class fl_server:
     def global_update(self, models):
         total_models = len(models)
         sum = 0 
-        # state_dict = model.state_dict()
+        model_paths = [os.path.join(self.server.client_updates_path, model_path)
+                             for model_path in models]
         state_dict = torch.load(self.server.client_updates_path + '/' + models[0])
         for i in range(1, len(models)):
             # print('\nPLEASE DONT GO INSIDE')
