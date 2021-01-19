@@ -1,7 +1,11 @@
 # TODO 
 
-1. in client/data_loader.py change the labels to be a list of label columns instead of explicitly defining it. 
+1. Add aggregation.py with various aggregation strategies
 
-2. Change epochs, etc in client/main_client.py to inherit from config
+2. Add SSL to Socket
 
-3. Add aggregation.py with various aggregation strategies. 
+3. Shift to asyncio
+
+# Considerations
+
+1. YAML or .py config?
