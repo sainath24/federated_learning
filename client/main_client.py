@@ -53,7 +53,7 @@ def main():
     client = Client.Client(config)
     client.connect()
     print('\nCONNECTED TO SERVER')
-    client.get('MODEL')
+    client.get()
     print('\nSAVED GLOBAL MODEL')
 
     # GET MODEL
@@ -104,16 +104,16 @@ def main():
         torch.save(model.state_dict(), client.model_folder +
                    '/' + client.model_name)
         client.connect()
-        client.send('UPDATE_MODEL')
+        client.send()
 
         # RECEIVE FROM SERVER
         client.connect()
-        result = client.get('MODEL')
+        result = client.get()
         while result == False:
             print('\nSERVER HAS NOT UPDATED GLOBAL')
             sleep(5)
             client.connect()
-            result = client.get('MODEL')
+            result = client.get()
 
         model.load_state_dict(torch.load(
             client.model_folder + '/' + client.model_name))
