@@ -22,12 +22,13 @@ class Client:
         print('\nINITIALISING CLIENT...')
         print("CONFIG:")
         print(config)
-        self.HOST = config['HOST']
-        self.PORT = config['PORT']
+        self.config = config
+        self.HOST = self.config['HOST']
+        self.PORT = self.config['PORT']
         
         # MODEL FOLDER
         try:
-            self.model_folder = config['model_folder']
+            self.model_folder = self.config['model_folder']
             if not os.path.isdir(self.model_folder):
                 print('\nFOLDER UNAVAILABLE, CREATING FOLDER...')
                 try:
@@ -53,7 +54,7 @@ class Client:
 
         # MODEL NAME
         try:
-            self.model_name = config['model_name']
+            self.model_name = self.config['model_name']
             print('MODEL NAME: ', self.model_name)
         except Exception as e:
             print('\nMODEL NAME NOT FOUND, USING DEFAULT NAME model.pth')
