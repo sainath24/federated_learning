@@ -4,7 +4,7 @@ import timm
 
 import numpy as np
 
-from torch import nn, optim
+from torch import nn
 
 class Model(nn.Module): 
     def __init__(self, arch="resnext101_32x8d", n_classes=6, pretrained=True):

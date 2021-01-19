@@ -4,7 +4,7 @@ import timm
 
 import numpy as np
 
-from torch import nn, optim
+from torch import nn
 
 
 class Model(nn.Module):
