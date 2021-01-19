@@ -1,3 +1,7 @@
+"""
+defines the training loop.
+"""
+
 from tqdm import tqdm
 import torch
 def train(model, train_loader, optimizer, criterion, epochs, device):
