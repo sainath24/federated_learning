@@ -2,7 +2,6 @@ import socket
 import tqdm
 import threading
 import os
-import yaml
 import pickle
 import secrets
 import sched
