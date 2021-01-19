@@ -1,3 +1,7 @@
+"""
+Starts the server. 
+"""
+
 import fl_server
 
 def main():
