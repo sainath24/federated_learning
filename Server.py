@@ -10,7 +10,7 @@ import queue
 import torchvision
 import torch
 
-import Model as m
+import model as m
 import numpy as np
 
 from time import time

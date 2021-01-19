@@ -8,7 +8,7 @@ import torchvision
 
 import numpy as np
 import train
-import Model as m
+import model as m
 import data_loader as dl
 import transforms as t
 
