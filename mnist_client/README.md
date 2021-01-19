@@ -1,0 +1,2 @@
+# MNIST CLIENT 
+Outdated.
