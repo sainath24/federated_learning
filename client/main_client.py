@@ -77,12 +77,12 @@ def main():
     if ds_type == "classification":
         train_loader, test_loader = dl.get_classification_dataset(
             train_csv_file=config["train_csv_file"],
-            train_path=config["train_path"],
+            train_path=config["train_image_dir"],
             train_transform=t.transform_train,
             train_labels=labels,
             train_bs=config["train_batch_size"],
             test_csv_file=config["test_csv_file"],
-            test_path=config["test_path"],
+            test_path=config["test_image_dir"],
             test_transform=t.transform_test,
             test_labels=[],
             test_bs=config["test_batch_size"]
