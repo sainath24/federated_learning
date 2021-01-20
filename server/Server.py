@@ -18,7 +18,7 @@ from time import sleep
 from torchvision import datasets, transforms
 from torch import nn, optim
 from os import path
-
+import traceback
 # QUERIES
 # MODEL - get latest model
 # CONFIG - get latest config
@@ -150,7 +150,7 @@ class Server:
                 filepath = self.model_path
                 filename = os.path.basename(filepath)
                 filesize = os.path.getsize(filepath)
-                conn.send(f"{filename}{SEPARATOR}{filesize}".encode())
+                conn.sendall(f"{filename}{SEPARATOR}{filesize}".encode())
                 print('\nBUFFER SIZE: ', BUFFER_SIZE, ' GLOBAL UPDATE: ', self.global_update)
                 progress = tqdm.tqdm(range(filesize), "SENDING MODEL TO " + addr[0])
                 with open(filepath, 'rb') as file:
@@ -174,7 +174,8 @@ class Server:
                 print('\nNOT SENDING UPDATE GLOBAL UPDATE: ', self.global_update)
 
             # RECEIVE OK 
-            response = self.s.recv(TOKEN_BUFFER_SIZE).decode()
+            print("should recieve an OK")
+            response = conn.recv(TOKEN_BUFFER_SIZE).decode()
             print('\nRESPONSE FROM CLIENT: ', response)
                 
             
@@ -217,13 +218,15 @@ class Server:
 
             #RECEIVE FILE
             progress = tqdm.tqdm(range(filesize), "RECEIVING UPDATED MODEL FROM: " + addr[0])
+            p = 0
             with open(path_to_save, 'wb') as file:
-                while True:
+                while p!=filesize:
                     #sleep(3)
                     data = conn.recv(BUFFER_SIZE)
                     if not data:
                         break
                     file.write(data)
+                    p+=len(data)
                     progress.update(len(data))
 
             # GET LOCK AND WRITE TO CLIENT DATA
@@ -241,6 +244,7 @@ class Server:
 
         except Exception as e:
             print('\nEXCEPTION IN receive_update_model: ', e)
+            traceback.print_exc()
             return False
         return True
         
