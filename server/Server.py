@@ -174,7 +174,7 @@ class Server:
                 print('\nNOT SENDING UPDATE GLOBAL UPDATE: ', self.global_update)
 
             # RECEIVE OK 
-            response = self.s.recv(TOKEN_BUFFER_SIZE).decode()
+            response = conn.recv(TOKEN_BUFFER_SIZE).decode()
             print('\nRESPONSE FROM CLIENT: ', response)
                 
             
