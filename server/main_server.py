@@ -4,6 +4,7 @@ Starts the server.
 
 import fl_server
 import yaml
+import traceback
 def main():
     with open('server_config.yaml') as file:
         config = yaml.safe_load(file)
@@ -12,4 +13,7 @@ def main():
     server.start()
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except:
+        traceback.print_exc()

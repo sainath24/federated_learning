@@ -75,7 +75,7 @@ class Client:
                     self.s.send(data.encode())
                     status = self.s.recv(TOKEN_BUFFER_SIZE) # RECEIVE TOKEN_OK from server
             else: # NEW CLIENT, REQUEST TOKEN
-                query = '00000000'
+                query = '0000000000000000'
                 self.s.send(query.encode())
                 token = self.s.recv(TOKEN_BUFFER_SIZE).decode()
                 with open('token.pkl', 'wb') as file:
