@@ -11,6 +11,7 @@ import numpy as np
 import model as m
 import data_loader as dl
 import transforms as t
+import traceback
 
 from time import time, sleep
 from torchvision import datasets, transforms
@@ -123,4 +124,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+       main()
+    except:
+       traceback.print_exc()
+

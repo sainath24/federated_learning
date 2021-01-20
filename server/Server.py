@@ -13,6 +13,8 @@ import model as m
 import numpy as np
 
 from time import time
+from time import sleep
+
 from torchvision import datasets, transforms
 from torch import nn, optim
 from os import path
@@ -32,7 +34,7 @@ LOCAL_MODEL_RECEIVED = 2
 # SETUP SERVER WITH YAML
 # DEEP LEARNING STUFF
 
-TOKEN_BUFFER_SIZE = 8
+TOKEN_BUFFER_SIZE = 16
 BUFFER_SIZE = 4096
 SEPARATOR = '&'
 
@@ -106,6 +108,27 @@ class Server:
 
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         print('\nSERVER INITIALISED')
+    
+    
+    def encode_to_UTF8(data):
+        try:
+            return data.encode('UTF-8')
+        except UnicodeEncodeError as e:
+            print("Could not encode data to UTF-8 -- %s" % e,data)
+            return False
+        except Exception as e:
+            print(e)
+            return False
+
+
+    def try_decode_UTF8(data):
+        try:
+            return data.decode('utf-8')
+        except UnicodeDecodeError as e:
+            print("Could not decode data to UTF-8 -- %s" % e,data)
+            return False
+        except Exception as e:
+            print(e)
 
     def save_tokens(self):
         with open('tokens.pkl','wb') as file:
@@ -127,7 +150,7 @@ class Server:
             self.tokens[token] = addr[0]
             self.save_tokens()
             # SEND TOKEN TO CLIENT
-            conn.send(token.encode())
+            conn.send(encode_to_UTF8(token))
             return token
         except Exception as e:
             print('\nEXCEPTION IN send_token: ', e)
@@ -147,7 +170,7 @@ class Server:
                 filepath = self.model_path
                 filename = os.path.basename(filepath)
                 filesize = os.path.getsize(filepath)
-                conn.send(f"{filename}{SEPARATOR}{filesize}".encode())
+                conn.send(encode_to_UTF8(f"{filename}{SEPARATOR}{filesize}"))
                 print('\nBUFFER SIZE: ', BUFFER_SIZE, ' GLOBAL UPDATE: ', self.global_update)
                 progress = tqdm.tqdm(range(filesize), "SENDING MODEL TO " + addr[0])
                 with open(filepath, 'rb') as file:
@@ -167,7 +190,7 @@ class Server:
                 #     self.check_client() # RUN WITH BLOCKING
                 self.lock.release()
             elif not self.global_update: # NOT UPDATED
-                conn.sendall(f"NO_UPDATE".encode())
+                conn.sendall(encode_to_UTF8("NO_UPDATE"))
                 print('\nNOT SENDING UPDATE GLOBAL UPDATE: ', self.global_update)
                 
             
@@ -182,7 +205,7 @@ class Server:
             filepath = self.fl_config
             filename = os.path.basename(filepath)
             filesize = os.path.getsize(filepath)
-            conn.send(f"{filename}{SEPARATOR}{filesize}".encode())
+            conn.send(encode_to_UTF8(f"{filename}{SEPARATOR}{filesize}"))
             progress = tqdm.tqdm(range(filesize), "SENDING MODEL TO " + addr[0])
             with open(filename, 'rb') as file:
                 while True:
@@ -200,7 +223,7 @@ class Server:
     def receive_updated_model(self, conn, addr, token):
         try:
             #RECEIVE DATA ON FILE
-            data = conn.recv(BUFFER_SIZE).decode()
+            data = try_decode_UTF8(conn.recv(BUFFER_SIZE))
             filename, filesize = data.split(SEPARATOR)
             filesize = int(filesize)
 
@@ -212,6 +235,7 @@ class Server:
             progress = tqdm.tqdm(range(filesize), "RECEIVING UPDATED MODEL FROM: " + addr[0])
             with open(path_to_save, 'wb') as file:
                 while True:
+                    sleep(3)
                     data = conn.recv(BUFFER_SIZE)
                     if not data:
                         break
@@ -237,14 +261,14 @@ class Server:
         # HANDLES CLIENT, OPEN A SEPARATE THREAD FOR EVERY CLIENT
         print('\nCONNECT TO CLIENT: ' + addr[0])
         result = False
-        token = conn.recv(TOKEN_BUFFER_SIZE).decode() #GET TOKEN
+        token = try_decode_UTF8(conn.recv(TOKEN_BUFFER_SIZE)) #GET TOKEN
         print('\nRECEIVED TOKEN: ' + token)
         if token == '00000000': # NEW CLIENT, SEND TOKEN
             token = self.send_token(conn, addr)
             if not token:
                 print('\nERROR IN SENDING TOKEN')
         else: # received token
-            conn.send(f"TOKEN_OK".encode())
+            conn.send(encode_to_UTF8("TOKEN_OK"))
             if token not in self.client_data.keys(): # INSERT CLIENT TOKEN IN DICTIONARY
                 self.client_data[token] = NEW_CLIENT
 

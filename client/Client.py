@@ -9,7 +9,7 @@ import pickle
 # CONFIG - get latest config
 # UPDATE_MODEL - send updated model
 
-TOKEN_BUFFER_SIZE = 8
+TOKEN_BUFFER_SIZE = 16
 BUFFER_SIZE = 4096
 SEPARATOR = '&'
 
