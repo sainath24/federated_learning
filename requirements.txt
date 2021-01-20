@@ -1,13 +1,10 @@
-Markdown==3.2.1
-matplotlib==3.3.3
-numpy==1.18.1
-pandas==1.0.1
-Pillow @ file:///opt/concourse/worker/volumes/live/dfab893a-afa4-4cd2-5a7e-fb894890ea44/volume/pillow_1609786793862/work
-PyYAML==5.3
-rsa==4.0
-six @ file:///opt/concourse/worker/volumes/live/f983ba11-c9fe-4dff-7ce7-d89b95b09771/volume/six_1605205318156/work
-tensorboard==2.1.0
-timm==0.3.4
-torch==1.7.1
-torchvision==0.8.2
-tqdm==4.55.1
+albumentations
+numpy
+pandas
+Pillow
+PyYAML
+tensorboard
+timm
+torch
+torchvision
+tqdm

@@ -2,7 +2,6 @@ import socket
 import tqdm
 import threading
 import os
-import yaml
 import pickle
 import secrets
 import sched
@@ -264,7 +263,7 @@ class Server:
             # query = conn.recv(BUFFER_SIZE).decode()
         conn.close()
         
-    def start(self, connections,check_client_data = None):
+    def start(self, connections, check_client_data = None):
         
         try:
             self.check_client = check_client_data

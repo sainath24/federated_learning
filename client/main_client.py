@@ -35,7 +35,7 @@ def main():
     lr = config['lr']
     ds_type = config['dataset']
     if config['device']:
-        device = config['device']
+        device = torch.device(config['device'])
     else:
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -65,7 +65,7 @@ def main():
     criterion = torch.nn.BCEWithLogitsLoss()
     optim_params = [{'params': model.parameters(), 'lr': lr}]
     if config["optimizer"]=="SGD": 
-        optimizer = optim.Adam(optim_params)
+        optimizer = optim.SGD(optim_params)
     elif config["optimizer"]=="Adam":
         optimizer = optim.Adam(optim_params)
     else: 
@@ -77,12 +77,12 @@ def main():
     if ds_type == "classification":
         train_loader, test_loader = dl.get_classification_dataset(
             train_csv_file=config["train_csv_file"],
-            train_path=config["train_path"],
+            train_path=config["train_image_dir"],
             train_transform=t.transform_train,
             train_labels=labels,
             train_bs=config["train_batch_size"],
             test_csv_file=config["test_csv_file"],
-            test_path=config["test_path"],
+            test_path=config["test_image_dir"],
             test_transform=t.transform_test,
             test_labels=[],
             test_bs=config["test_batch_size"]
