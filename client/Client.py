@@ -112,6 +112,11 @@ class Client:
                         break
                     file.write(data)
                     progress.update(len(data))
+            
+            # SEND OK 
+            self.s.send("RECEIVED_OK".encode())
+            print('\nSENT OK TO SERVER')
+
         except Exception as e:
             print('\nEXCEPTION IN get: ', e)
             # self.s.close()
@@ -134,6 +139,11 @@ class Client:
                         break
                     self.s.sendall(read)
                     progress.update(len(read))
+            
+            # RECEIVE OK 
+            response = self.s.recv(TOKEN_BUFFER_SIZE).decode()
+            print('\nRESPONSE: ', response)
+            
         except Exception as e:
             print('\nEXCEPTION in send: ', e)
             # self.s.close()
