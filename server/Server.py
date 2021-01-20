@@ -160,10 +160,6 @@ class Server:
                             break
                         conn.sendall(read)
                         progress.update(len(read))
-                
-                # RECEIVE OK 
-                response = self.s.recv(TOKEN_BUFFER_SIZE).decode()
-                print('\nRESPONSE FROM CLIENT: ', response)
                     
                 # GET LOCK AND WRITE TO CLIENT DATA
                 self.lock.acquire() # BLOCKS UNTIL LOCK IS ACQUIRED
@@ -176,6 +172,10 @@ class Server:
             elif not self.global_update: # NOT UPDATED
                 conn.sendall(f"NO_UPDATE".encode())
                 print('\nNOT SENDING UPDATE GLOBAL UPDATE: ', self.global_update)
+
+            # RECEIVE OK 
+            response = self.s.recv(TOKEN_BUFFER_SIZE).decode()
+            print('\nRESPONSE FROM CLIENT: ', response)
                 
             
         except Exception as e:
@@ -225,10 +225,6 @@ class Server:
                         break
                     file.write(data)
                     progress.update(len(data))
-            
-            # SEND OK 
-            conn.send('SERVER_OK'.encode())
-            print('\nSENT OK TO CLIENT')
 
             # GET LOCK AND WRITE TO CLIENT DATA
             self.lock.acquire() # BLOCKS UNTIL LOCK IS ACQUIRED
@@ -237,6 +233,10 @@ class Server:
             # if self.check_client != None:
             self.check_client() # RUN WITH BLOCKING
             self.lock.release()
+
+            # SEND OK 
+            conn.send('SERVER_OK'.encode())
+            print('\nSENT OK TO CLIENT')
             
 
         except Exception as e:
