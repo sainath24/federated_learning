@@ -14,7 +14,7 @@ class ClassificationDataset(data.Dataset):
         """
         
         self.path = path
-        self.data = pd.read_csv(csv_file)
+        self.data = pd.read_csv(csv_file).head(10)
         self.transform = transform 
         self.labels = labels
 

@@ -3,7 +3,7 @@ import threading
 import os
 import torch
 import torchvision
-
+import traceback
 import numpy as np
 import aggregators as agg
 
@@ -81,10 +81,12 @@ class fl_server:
 
         except Exception as e:
             print('check_client_data: ', e)
+            traceback.print_exc()
+
 
     def start_server(self):
         try:
-            self.server.start(self.server.HOST, self.server.PORT, self.max_clients, self.check_client_data)
+            self.server.start(self.max_clients, self.check_client_data)
         except Exception as e:
             print('\nEXCEPTING in start_server: ' ,e)
 

@@ -5,13 +5,21 @@ model_folder: CLIENT_MODEL
 model_name: client.pth
 arch: "resnext101_32x8d"
 
-# IP 
-HOST: "2.tcp.ngrok.io"
+# IP
+HOST: "127.0.0.1"
 PORT: 10987
 
 # DATASET
 dataset: "classification" # choices: classification, detection
-labels: ['epidural', 'intraparenchymal', 'intraventricular', 'subarachnoid', 'subdural', 'any']
+labels:
+  [
+    "epidural",
+    "intraparenchymal",
+    "intraventricular",
+    "subarachnoid",
+    "subdural",
+    "any",
+  ]
 n_classes: 6 # should match len(labels)
 
 # TRANSFORMS
@@ -28,10 +36,8 @@ lr: 0.00002
 device: "cuda" # choices: cpu, cuda
 optimizer: "Adam" # choices: Adam, SGD
 
-
 # TESTING
 test_csv_file: ""
 test_image_dir: ""
 test: False # need to see logic, idea is to use when only training and not validating
 test_batch_size: 1
-

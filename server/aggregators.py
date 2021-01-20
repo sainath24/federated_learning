@@ -19,6 +19,7 @@ def average(model_paths):
 
         for key in state_dict:
             state_dict[key] += state_dict_2[key]
+            
     for key in state_dict:
-        state_dict[key] /= total_models
+        state_dict[key] = state_dict[key] / torch.tensor(total_models,dtype=torch.long)
     return state_dict
