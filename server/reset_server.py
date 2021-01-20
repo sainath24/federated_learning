@@ -8,6 +8,8 @@ try:
 except:
     pass
 try:
+    for x in os.listdir("CLIENT_UPDATES"):
+        os.remove("CLIENT_UPDATES/"+x)
     os.removedirs("CLIENT_UPDATES")
 except:
     pass
