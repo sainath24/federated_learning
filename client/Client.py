@@ -88,41 +88,44 @@ class Client:
         return True
 
     def get(self):
+        result = True
         try:
             # OK RESPONSE
             data = self.s.recv(BUFFER_SIZE).decode()
             print('\nRESPONSE FROM SERVER: ', data)
             if data == 'NO_UPDATE':
                 print('\nGOT NOT UPDATED RESPONSE\n')
-                return False
+                result = False
 
-            # UPDATE AVAILABLE
-            filename, filesize = data.split(SEPARATOR)
-            filesize = int(filesize)
-            path = os.path.join(self.model_folder, self.model_name)
+            else:
+                # UPDATE AVAILABLE
+                filename, filesize = data.split(SEPARATOR)
+                filesize = int(filesize)
+                path = os.path.join(self.model_folder, self.model_name)
 
-            print('\nRECEIVED INFO: ', filename, ' SIZE: ', filesize)
+                print('\nRECEIVED INFO: ', filename, ' SIZE: ', filesize)
 
-            #RECEIVE FILE
-            progress = tqdm.tqdm(range(filesize), "RECEIVING " + filename)
-            with open(path, 'wb') as file:
-                while True:
-                    data = self.s.recv(BUFFER_SIZE)
-                    if not data:
-                        break
-                    file.write(data)
-                    progress.update(len(data))
-            
-            # SEND OK 
-            self.s.send("RECEIVED_OK".encode())
-            print('\nSENT OK TO SERVER')
+                #RECEIVE FILE
+                progress = tqdm.tqdm(range(filesize), "RECEIVING " + filename)
+                with open(path, 'wb') as file:
+                    while True:
+                        data = self.s.recv(BUFFER_SIZE)
+                        if not data:
+                            break
+                        file.write(data)
+                        progress.update(len(data))
+                result = True
 
         except Exception as e:
             print('\nEXCEPTION IN get: ', e)
             # self.s.close()
             return False
+        
+        # SEND OK 
+        self.s.send("RECEIVED_OK".encode())
+        print('\nSENT OK TO SERVER')
         # self.s.close()
-        return True
+        return result
 
     def send(self): #SEND UPDATED MODEL
         try:
@@ -143,7 +146,7 @@ class Client:
             # RECEIVE OK 
             response = self.s.recv(TOKEN_BUFFER_SIZE).decode()
             print('\nRESPONSE: ', response)
-            
+
         except Exception as e:
             print('\nEXCEPTION in send: ', e)
             # self.s.close()
