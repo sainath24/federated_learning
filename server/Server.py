@@ -269,10 +269,8 @@ class Server:
                 print("\nERROR IN SENDING TOKEN")
         else:  # received token
             conn.send(f"TOKEN_OK".encode())
-            if (
-                token not in self.client_data.keys()
-            ):  # INSERT CLIENT TOKEN IN DICTIONARY
-                self.client_data[token] = NEW_CLIENT
+        if token not in self.client_data.keys():  # INSERT CLIENT TOKEN IN DICTIONARY
+            self.client_data[token] = NEW_CLIENT
 
         # HANDLE CLIENT
         client_status = self.client_data[token]
