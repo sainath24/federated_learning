@@ -1,7 +1,7 @@
 TOKEN_BUFFER_SIZE = 16
 BUFFER_SIZE = 4096
 SEPARATOR = "&"
-TOKEN_REGEX = "[a-f][0-9]{16}"
+TOKEN_REGEX = "[a-f0-9]{16}"
 
 # CLIENT STATUS
 NEW_CLIENT = 0
@@ -23,7 +23,7 @@ client_invalid_response = "INVLAID_RESPONSE"
 send_model_fail = "SEND_MODEL_FAIL"
 
 
-#CLIENT
+# CLIENT
 REQUIRES_TOKEN = "0000000000000000"
 client_connection_success = "CONNECTED TO SERVER"
 client_connection_fail_retry = "CONNECTION TO SERVER FAILED, RETRYING..."

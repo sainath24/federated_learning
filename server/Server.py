@@ -22,7 +22,8 @@ import traceback
 import re
 
 import sys
-sys.path.append('../')
+
+sys.path.append("../")
 import values
 from values import BUFFER_SIZE, TOKEN_BUFFER_SIZE, SEPARATOR
 from values import NEW_CLIENT, LOCAL_MODEL_RECEIVED, GLOBAL_MODEL_SENT
@@ -132,7 +133,7 @@ class Server:
                 token = secrets.token_hex(8)
             self.tokens[token] = addr[0]
             self.save_tokens()
-            
+
             conn.send(token.encode()) # SEND TOKEN TO CLIENT
             return token
         except Exception as e:
@@ -160,7 +161,7 @@ class Server:
     def send_model(self, conn, addr, token):
         result = False
         try:
-            if self.should_send_model(token): 
+            if self.should_send_model(token):
                 filepath = self.model_path
                 filename = os.path.basename(filepath)
                 filesize = os.path.getsize(filepath)
@@ -182,10 +183,10 @@ class Server:
                             if not read:
                                 break
                             conn.sendall(read)
-                            p+=len(read)
+                            p += len(read)
                             progress.update(len(read))
 
-                    if p!=filesize: # ERROR IN SEND, FULL FILE HAS NOT BEEN SENT
+                    if p != filesize:  # ERROR IN SEND, FULL FILE HAS NOT BEEN SENT
                         result = False
                         print(values.send_model_fail)
                     # GET LOCK AND WRITE TO CLIENT DATA
@@ -198,10 +199,12 @@ class Server:
                         #     self.check_client() # RUN WITH BLOCKING
                         self.lock.release()
                         result = True
-                elif response == values.metadata_invalid: # META DATA ERROR, CLIENT WILL RETRY
+                elif (
+                    response == values.metadata_invalid
+                ):  # META DATA ERROR, CLIENT WILL RETRY
                     print(values.metadata_invalid)
                     result = False
-                else: # INVALID RESPONSE FROM CLIENT
+                else:  # INVALID RESPONSE FROM CLIENT
                     print(values.client_invalid_response)
                     result = False
 
@@ -253,7 +256,7 @@ class Server:
                 path_to_save = os.path.join(self.client_updates_path, token + ".pth")
                 conn.sendall(values.metadata_valid.encode())
                 result = True
-            except: # INVALID METADATA
+            except:  # INVALID METADATA
                 conn.sendall(values.metadata_invalid.encode())
                 result = False
 
@@ -274,7 +277,7 @@ class Server:
                         p += len(data)
                         progress.update(len(data))
 
-                if p==filesize: # FULL MODEL RECEIVED
+                if p == filesize:  # FULL MODEL RECEIVED
                     # GET LOCK AND WRITE TO CLIENT DATA
                     self.lock.acquire()  # BLOCKS UNTIL LOCK IS ACQUIRED
                     self.client_data[token] = LOCAL_MODEL_RECEIVED
@@ -295,21 +298,20 @@ class Server:
             print("\nEXCEPTION IN receive_update_model: ", e)
             print(values.receive_model_fail)
             traceback.print_exc()
-            result =  False
-        
+            result = False
+
         return result
 
     def check_valid_client(self, token):
-        if token in self.get_client_data.keys():
+        if token in self.get_client_data().keys():
             return True
         return False
 
     def check_token_validity(self, token):
         check = re.fullmatch(values.TOKEN_REGEX, token)
-        if check and self.check_valid_client(token): # VALID HEXADECIMAL TOKEN
+        if check and self.check_valid_client(token):  # VALID HEXADECIMAL TOKEN
             return True
         return False
-
 
     def handle_client(self, conn, addr):
         # HANDLES CLIENT, OPEN A SEPARATE THREAD FOR EVERY CLIENT
@@ -321,14 +323,14 @@ class Server:
         # HANDLE TOKEN
         if token == values.REQUIRES_TOKEN:  # NEW CLIENT, SEND TOKEN
             token = self.send_token(conn, addr)
-            if not token: # FAILURE IN SENDING TOKEN
+            if not token:  # FAILURE IN SENDING TOKEN
                 conn.send(values.send_token_fail.encode())
                 print(values.send_token_fail)
             else:
                 self.client_data[token] = NEW_CLIENT
-        if self.check_token_validity(token): # INVALID TOKEN, END CONNECTION
-            conn.send(values.receive_token_success.encode())
-        else: # INVALID TOKEN, CLOSE CONNECTION
+        if self.check_token_validity(token):  # INVALID TOKEN, END CONNECTION
+            conn.send(values.receive_token_valid.encode())
+        else:  # INVALID TOKEN, CLOSE CONNECTION
             conn.send(values.receive_token_invalid.encode())
             print(values.receive_token_invalid)
             conn.close()
