@@ -105,16 +105,22 @@ class Client:
 
                 print('\nRECEIVED INFO: ', filename, ' SIZE: ', filesize)
 
-                #RECEIVE FILE
-                progress = tqdm.tqdm(range(filesize), "RECEIVING " + filename)
-                with open(path, 'wb') as file:
-                    while True:
-                        data = self.s.recv(BUFFER_SIZE)
-                        if not data:
-                            break
-                        file.write(data)
-                        progress.update(len(data))
-                result = True
+            #RECEIVE FILE
+            progress = tqdm.tqdm(range(filesize), "RECEIVING " + filename)
+            p=0
+            with open(path, 'wb') as file:
+                while p!=filesize:
+                    data = self.s.recv(BUFFER_SIZE)
+                    if not data:
+                        break
+                    file.write(data)
+                    p+=len(data)
+                    progress.update(len(data))
+                    
+            
+            # SEND OK 
+            self.s.sendall("RECEIVED_OK".encode())
+            print('\nSENT OK TO SERVER')
 
         except Exception as e:
             print('\nEXCEPTION IN get: ', e)
