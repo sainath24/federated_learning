@@ -9,6 +9,8 @@ import queue
 import torchvision
 import torch
 
+import select
+
 import model as m
 import numpy as np
 
@@ -133,6 +135,7 @@ class Server:
             self.tokens[token] = addr[0]
             self.save_tokens()
             
+            self.empty_socket(conn)
             conn.send(token.encode()) # SEND TOKEN TO CLIENT
             return token
         except Exception as e:
@@ -146,6 +149,14 @@ class Server:
                 count += 1
         if count == len(self.client_data.keys()):
             self.global_update = False
+
+    def empty_socket(self, sock):
+        while True:
+            ready_to_read, write, error = select.select([sock], [sock], [], 0.5)
+            if len(ready_to_read) == 0:
+                break
+            for s in ready_to_read:
+                sock.recv(BUFFER_SIZE)
 
     def is_new_client(self, token):
         if self.client_data[token] == NEW_CLIENT:
@@ -164,6 +175,8 @@ class Server:
                 filepath = self.model_path
                 filename = os.path.basename(filepath)
                 filesize = os.path.getsize(filepath)
+
+                self.empty_socket(conn)
                 conn.sendall(f"{filename}{SEPARATOR}{filesize}".encode())
 
                 response = conn.recv(TOKEN_BUFFER_SIZE).decode() # GET META DATA OKAY
@@ -174,6 +187,7 @@ class Server:
                         " GLOBAL UPDATE: ",
                         self.global_update,
                     )
+                    self.empty_socket(conn)
                     progress = tqdm.tqdm(range(filesize), "SENDING MODEL TO " + addr[0])
                     p = 0
                     with open(filepath, "rb") as file:
@@ -206,7 +220,8 @@ class Server:
                     result = False
 
             else:  # DO NOT SEND MODEL
-                conn.sendall(values.no_update_available.encode())
+                self.empty_socket(conn)
+                conn.send(values.no_update_available.encode())
                 print(values.no_update_available)
                 result = True
 
@@ -251,9 +266,12 @@ class Server:
                 filename, filesize = data.split(SEPARATOR)
                 filesize = int(filesize)
                 path_to_save = os.path.join(self.client_updates_path, token + ".pth")
+
+                self.empty_socket(conn)
                 conn.sendall(values.metadata_valid.encode())
                 result = True
             except: # INVALID METADATA
+                self.empty_socket(conn)
                 conn.sendall(values.metadata_invalid.encode())
                 result = False
 
@@ -265,13 +283,13 @@ class Server:
                 )
                 p = 0
                 with open(path_to_save, "wb") as file:
-                    while p != filesize:
+                    while p < filesize:
                         # sleep(3)
                         data = conn.recv(BUFFER_SIZE)
                         if not data:
                             break
                         file.write(data)
-                        p += len(data)
+                        p = p + len(data)
                         progress.update(len(data))
 
                 if p==filesize: # FULL MODEL RECEIVED
@@ -280,13 +298,17 @@ class Server:
                     self.client_data[token] = LOCAL_MODEL_RECEIVED
                     self.save_client_data()
                     # if self.check_client != None:
-                    self.check_client()  # RUN WITH BLOCKING
                     self.lock.release()
                     result = True
 
                     # SEND OK
+                    self.empty_socket(conn)
                     conn.send(values.receive_model_success.encode())
                     print(values.receive_model_success)
+
+                    self.lock.acquire()  # BLOCKS UNTIL LOCK IS ACQUIRED
+                    self.check_client()  # RUN WITH BLOCKING
+                    self.lock.release()
                 else:
                     result = False
                     print(values.receive_model_fail)
@@ -300,7 +322,7 @@ class Server:
         return result
 
     def check_valid_client(self, token):
-        if token in self.get_client_data.keys():
+        if token in self.get_client_data().keys():
             return True
         return False
 
@@ -310,11 +332,10 @@ class Server:
             return True
         return False
 
-
     def handle_client(self, conn, addr):
         # HANDLES CLIENT, OPEN A SEPARATE THREAD FOR EVERY CLIENT
-        print("\nCONNECT TO CLIENT: " + addr[0])
         result = False
+        print("\nCONNECT TO CLIENT: " + addr[0])
         token = conn.recv(TOKEN_BUFFER_SIZE).decode()  # GET TOKEN
         print("\nRECEIVED TOKEN: " + token)
 
@@ -322,13 +343,18 @@ class Server:
         if token == values.REQUIRES_TOKEN:  # NEW CLIENT, SEND TOKEN
             token = self.send_token(conn, addr)
             if not token: # FAILURE IN SENDING TOKEN
+                self.empty_socket(conn)
                 conn.send(values.send_token_fail.encode())
                 print(values.send_token_fail)
             else:
                 self.client_data[token] = NEW_CLIENT
         if self.check_token_validity(token): # INVALID TOKEN, END CONNECTION
-            conn.send(values.receive_token_success.encode())
+            self.empty_socket(conn)
+            conn.send(values.receive_token_valid.encode())
+            response = conn.recv(TOKEN_BUFFER_SIZE).decode()
+            print(response)
         else: # INVALID TOKEN, CLOSE CONNECTION
+            self.empty_socket(conn)
             conn.send(values.receive_token_invalid.encode())
             print(values.receive_token_invalid)
             conn.close()
@@ -350,7 +376,6 @@ class Server:
         conn.close()
 
     def start(self, connections, check_client_data=None):
-
         try:
             self.check_client = check_client_data
             self.s.bind((self.HOST, self.PORT))

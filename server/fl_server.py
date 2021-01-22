@@ -34,11 +34,11 @@ class fl_server:
 
         # SAVE GLOBAL UPDATE
         torch.save(averaged_state_dict, self.server.model_path)
-        print('\nNEW GLOBAL MODEL MADEEEEE')
+        print('\nNEW GLOBAL MODEL MADE')
             
 
     def update_central(self, models):
-        print('\nGONNA UPDATEEE YAAAAYYYY')
+        # print('\nGONNA UPDATEEE YAAAAYYYY')
         client_data = self.server.get_client_data()
         # MAKE A LIST OF MODELS USED FOR CENTRAL UPDATE
         # models = []
@@ -53,6 +53,7 @@ class fl_server:
         if len(models) == len(client_data.keys()): # DO GLOBAL UPDATE
             self.global_update(models)
             self.server.global_update = True
+            print('\nFL ROUND COMPLETED: ', self.rounds) # TEMP
             self.rounds -=1
         else:
             self.global_update = False

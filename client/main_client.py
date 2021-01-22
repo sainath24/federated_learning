@@ -112,7 +112,7 @@ def main():
         result = client.get()
         while result == False:
             print('\nSERVER HAS NOT UPDATED GLOBAL')
-            sleep(5)
+            sleep(30)
             client.connect()
             result = client.get()
 
