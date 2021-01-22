@@ -168,7 +168,7 @@ class Client:
                     print(values.no_update_available)
                     self.empty_socket()
                     self.s.send(values.client_received_message.encode()) # SEND OK TO SERVER
-                    result = True
+                    return False
 
                 else: # TODO: maybe change to a proper condition
                     # UPDATE AVAILABLE
