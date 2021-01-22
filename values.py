@@ -19,17 +19,19 @@ receive_model_fail = "RECEIVE_FAIL"
 receive_token_valid = "TOKEN_OK"
 receive_token_invalid = "TOKEN_INVALID"
 send_token_fail = "SEND_TOKEN_FAIL"
-client_invalid_response = "INVLAID_RESPONSE"
+client_invalid_response = "INVALID_RESPONSE"
 send_model_fail = "SEND_MODEL_FAIL"
 
 
 # CLIENT
 REQUIRES_TOKEN = "0000000000000000"
+client_receive_model_success = "MODEL_RECEIVED"
+client_received_message = "CLIENT_OK"
+
 client_connection_success = "CONNECTED TO SERVER"
 client_connection_fail_retry = "CONNECTION TO SERVER FAILED, RETRYING..."
 client_connection_fail = "CONNECTION TO SERVER FAILED"
 client_invalid_token = "INVALID TOKEN, REQUESTING NEW TOKEN"
-client_receive_model_success = "MODEL_RECEIVED"
 get_failed_retry = "UNABLE TO RECEIVE MODEL, RETRYING..."
 get_failed = "UNABLE TO RECEIVE MODEL"
 send_failed_retry = "UNABLE TO SEND MODEL, RETRYING..."
