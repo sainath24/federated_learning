@@ -351,7 +351,7 @@ class Server:
                 print(values.send_token_fail)
             else:
                 self.client_data[token] = NEW_CLIENT
-        if self.check_token_validity(token): # INVALID TOKEN, END CONNECTION
+        elif self.check_token_validity(token): # INVALID TOKEN, END CONNECTION
             self.empty_socket(conn)
             conn.send(values.receive_token_valid.encode())
             response = conn.recv(TOKEN_BUFFER_SIZE).decode()
