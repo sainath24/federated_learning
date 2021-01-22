@@ -134,7 +134,7 @@ class Server:
             self.tokens[token] = addr[0]
             self.save_tokens()
 
-            conn.send(token.encode()) # SEND TOKEN TO CLIENT
+            conn.send(token.encode())  # SEND TOKEN TO CLIENT
             return token
         except Exception as e:
             print("\nEXCEPTION IN send_token: ", e)
@@ -167,7 +167,7 @@ class Server:
                 filesize = os.path.getsize(filepath)
                 conn.sendall(f"{filename}{SEPARATOR}{filesize}".encode())
 
-                response = conn.recv(TOKEN_BUFFER_SIZE).decode() # GET META DATA OKAY
+                response = conn.recv(TOKEN_BUFFER_SIZE).decode()  # GET META DATA OKAY
                 if response == values.metadata_valid:
                     print(
                         "\nBUFFER SIZE: ",
