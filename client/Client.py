@@ -12,9 +12,11 @@ import traceback
 import select
 
 import sys
-sys.path.append('../')
+
+sys.path.append("../")
 import values
 from values import TOKEN_BUFFER_SIZE, BUFFER_SIZE, SEPARATOR
+
 # QUERIES
 # MODEL - get latest model
 # CONFIG - get latest config
@@ -28,49 +30,50 @@ from values import TOKEN_BUFFER_SIZE, BUFFER_SIZE, SEPARATOR
 # CONFIG_NAME = 'config.yaml'
 MAX_RETRY = 5
 
+
 class Client:
     def __init__(self, config):
         super().__init__()
-        print('\nINITIALISING CLIENT...')
+        print("\nINITIALISING CLIENT...")
         print("CONFIG:")
         print(config)
         self.config = config
-        self.HOST = self.config['HOST']
-        self.PORT = self.config['PORT']
-        
+        self.HOST = self.config["HOST"]
+        self.PORT = self.config["PORT"]
+
         # MODEL FOLDER
         try:
-            self.model_folder = self.config['model_folder']
+            self.model_folder = self.config["model_folder"]
             if not os.path.isdir(self.model_folder):
-                print('\nFOLDER UNAVAILABLE, CREATING FOLDER...')
+                print("\nFOLDER UNAVAILABLE, CREATING FOLDER...")
                 try:
                     os.makedirs(self.model_folder)
                 except:
-                    print('\nUNABLE TO CREATE FOLDER')
-                    if not os.path.isdir('MODEL'):
-                        print('\nCREATING DEFAULT PATH /MODEL...')
-                        os.mkdir('MODEL')
+                    print("\nUNABLE TO CREATE FOLDER")
+                    if not os.path.isdir("MODEL"):
+                        print("\nCREATING DEFAULT PATH /MODEL...")
+                        os.mkdir("MODEL")
                     else:
-                        print('\nUSING DEFAULT PATH: /MODEL')
-                    self.model_folder = 'MODEL'
-    
+                        print("\nUSING DEFAULT PATH: /MODEL")
+                    self.model_folder = "MODEL"
+
         except Exception as e:
             print(e)
             # print('\nPATH TO MODEL NOT FOUND...')
-            if not os.path.isdir('MODEL'):
-                print('\nCREATING DEFAULT PATH /MODEL...')
-                os.mkdir('MODEL')
+            if not os.path.isdir("MODEL"):
+                print("\nCREATING DEFAULT PATH /MODEL...")
+                os.mkdir("MODEL")
             else:
-                print('\nUSING DEFAULT PATH: /MODEL')
-            self.model_folder = 'MODEL'
+                print("\nUSING DEFAULT PATH: /MODEL")
+            self.model_folder = "MODEL"
 
         # MODEL NAME
         try:
-            self.model_name = self.config['model_name']
-            print('MODEL NAME: ', self.model_name)
+            self.model_name = self.config["model_name"]
+            print("MODEL NAME: ", self.model_name)
         except Exception as e:
-            print('\nMODEL NAME NOT FOUND, USING DEFAULT NAME model.pth')
-            self.model_name = 'model.pth'
+            print("\nMODEL NAME NOT FOUND, USING DEFAULT NAME model.pth")
+            self.model_name = "model.pth"
 
         # CREATE SOCKET
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -105,7 +108,7 @@ class Client:
         response = self.s.recv(TOKEN_BUFFER_SIZE).decode() # receive response from server
         if response == values.receive_token_invalid:
             try:
-                os.remove('token.pkl')
+                os.remove("token.pkl")
                 print(values.client_invalid_token)
             except:
                 traceback.print_exc()
@@ -116,17 +119,17 @@ class Client:
             return True
 
     def save_token(self, token):
-        with open('token.pkl', 'wb') as file:
-            pickle.dump(token, file) # SAVE TOKEN
+        with open("token.pkl", "wb") as file:
+            pickle.dump(token, file)  # SAVE TOKEN
         file.close()
-    
+
     def handle_token(self):
         try:
-            if os.path.isfile('token.pkl'): # TOKEN IS PRESENT
-                with open('token.pkl', 'rb') as file:
+            if os.path.isfile("token.pkl"):  # TOKEN IS PRESENT
+                with open("token.pkl", "rb") as file:
                     token = pickle.load(file)
                 result = self.send_token(token)
-            else: # NEW CLIENT, REQUIRES TOKEN
+            else:  # NEW CLIENT, REQUIRES TOKEN
                 result = self.request_token()
             return result
         except:
@@ -146,7 +149,7 @@ class Client:
                 else:
                     print(values.client_connection_fail_retry)
             except Exception as e:
-                print('\nEXCEPTION IN CONNECT: ', e)
+                print("\nEXCEPTION IN CONNECT: ", e)
                 traceback.print_exc()
                 result = False
         if result == False:
@@ -160,7 +163,7 @@ class Client:
             try:
                 # OK RESPONSE
                 data = self.s.recv(BUFFER_SIZE).decode()
-                print('\nRESPONSE FROM SERVER: ', data)
+                print("\nRESPONSE FROM SERVER: ", data)
                 if data == values.no_update_available:
                     print(values.no_update_available)
                     self.empty_socket()
@@ -184,8 +187,8 @@ class Client:
                         result = False
 
                     if result == True:
-                        print('\nRECEIVED INFO: ', filename, ' SIZE: ', filesize)
-                        #RECEIVE FILE
+                        print("\nRECEIVED INFO: ", filename, " SIZE: ", filesize)
+                        # RECEIVE FILE
                         progress = tqdm.tqdm(range(filesize), "RECEIVING " + filename)
                         p=0
                         with open(path, 'wb') as file:
@@ -194,7 +197,7 @@ class Client:
                                 if not data:
                                     break
                                 file.write(data)
-                                p+=len(data)
+                                p += len(data)
                                 progress.update(len(data))
                             
                         if p == filesize: # SEND OK 
@@ -205,23 +208,23 @@ class Client:
                             result = False
 
             except Exception as e:
-                print('\nEXCEPTION IN get: ', e)
+                print("\nEXCEPTION IN get: ", e)
                 traceback.print_exc()
                 result = False
             self.s.close()
             if result == True:
-                break 
+                break
             else:
                 print(values.get_failed_retry)
                 if i+1 != MAX_RETRY:
                     sleep(10)
                     self.connect()
-        
+
         if result == False:
             print(values.get_failed)
         return result
 
-    def send(self): #SEND UPDATED MODEL
+    def send(self):  # SEND UPDATED MODEL
         result = False
         for i in range(MAX_RETRY):
             try:
@@ -245,10 +248,12 @@ class Client:
                             if not read:
                                 break
                             self.s.sendall(read)
-                            p+=len(read)
+                            p += len(read)
                             progress.update(len(read))
-                    
-                    if p != filesize: # ERROR IN SEND, FULL FILE HAS NOT BEEN SENT, RETRY
+
+                    if (
+                        p != filesize
+                    ):  # ERROR IN SEND, FULL FILE HAS NOT BEEN SENT, RETRY
                         result = False
                         print(values.send_model_fail)
                     
@@ -260,17 +265,17 @@ class Client:
                 elif response == values.metadata_invalid:
                     print(values.metadata_invalid)
                     result = False
-                else: # INVALID RESPONSE FROM CLIENT
+                else:  # INVALID RESPONSE FROM CLIENT
                     print(values.client_invalid_response)
                     result = False
 
-                if result == True: # RECEIVE OK 
+                if result == True:  # RECEIVE OK
                     response = self.s.recv(TOKEN_BUFFER_SIZE).decode()
                     print('\nRESPONSE: ', response)
                 
 
             except Exception as e:
-                print('\nEXCEPTION in send: ', e)
+                print("\nEXCEPTION in send: ", e)
                 traceback.print_exc()
                 # self.s.close()
                 result = False
@@ -287,4 +292,3 @@ class Client:
         if result == False:
             print(values.send_failed)
         return result
-

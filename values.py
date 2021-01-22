@@ -23,7 +23,7 @@ client_invalid_response = "INVALID_RESPONSE"
 send_model_fail = "SEND_MODEL_FAIL"
 
 
-#CLIENT
+# CLIENT
 REQUIRES_TOKEN = "0000000000000000"
 client_receive_model_success = "MODEL_RECEIVED"
 client_received_message = "CLIENT_OK"
