@@ -6,7 +6,7 @@ import torch
 
 
 class ClassificationDataset(data.Dataset):
-    def __init__(self, csv_file, path, labels transform=None,debug=False):
+    def __init__(self, csv_file, path, labels, transform=None, debug=False):
         """
         :param: csv_file - path to csv file with format [Image, Label_Columns]
         :param: path - image dir path
@@ -54,6 +54,7 @@ def get_classification_dataset(
     test_transform,
     test_labels,
     test_bs,
+    debug=False,
 ):
 
     train_dataset = ClassificationDataset(
@@ -61,6 +62,7 @@ def get_classification_dataset(
         path=train_path,
         transform=train_transform,
         labels=train_labels,
+        debug=debug,
     )
 
     test_dataset = ClassificationDataset(
@@ -68,6 +70,7 @@ def get_classification_dataset(
         path=test_path,
         transform=test_transform,
         labels=test_labels,
+        debug=debug,
     )
     train_loader = data.DataLoader(
         train_dataset, batch_size=train_bs, shuffle=True, num_workers=4
