@@ -141,6 +141,7 @@ class Client:
         for i in range(MAX_RETRY):
             try:
                 self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                self.s.bind(('',self.config["CLIENT_PORT"]))
                 self.s.connect((self.HOST, self.PORT))
                 result = self.handle_token()
                 if result:

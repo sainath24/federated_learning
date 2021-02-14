@@ -31,10 +31,10 @@ def check_model_similarity(model1, model2):
         else:
             flag += 1
             break
-        if flag > 0:
-            print("\nMODELS SAME", flag)
-        else:
-            print("\nMODELS NOT SAME")
+    if flag > 0:
+        print("\nMODELS SAME", flag)
+    else:
+        print("\nMODELS NOT SAME")
 
 
 def main():

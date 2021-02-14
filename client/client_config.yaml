@@ -9,6 +9,8 @@ arch: "resnet18"
 HOST: "127.0.0.1"
 PORT: 9865
 
+#CLIENT PORT
+CLIENT_PORT: 52475
 # DATASET
 dataset: "classification" # choices: classification, detection
 labels:

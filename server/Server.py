@@ -133,11 +133,11 @@ class Server:
             token = secrets.token_hex(8)
             while token in self.tokens.keys():
                 token = secrets.token_hex(8)
-            self.tokens[token] = addr[0]
+            self.tokens[token] = addr[1]
             self.save_tokens()
-            
+
             self.empty_socket(conn)
-            conn.send(token.encode()) # SEND TOKEN TO CLIENT
+            conn.send(token.encode())  # SEND TOKEN TO CLIENT
             return token
         except Exception as e:
             print("\nEXCEPTION IN send_token: ", e)
@@ -189,7 +189,9 @@ class Server:
                         self.global_update,
                     )
                     self.empty_socket(conn)
-                    progress = tqdm.tqdm(range(filesize), "SENDING MODEL TO " + addr[0])
+                    progress = tqdm.tqdm(
+                        range(filesize), "SENDING MODEL TO " + str(addr[1])
+                    )
                     p = 0
                     with open(filepath, "rb") as file:
                         while True:
@@ -246,7 +248,7 @@ class Server:
             filename = os.path.basename(filepath)
             filesize = os.path.getsize(filepath)
             conn.send(f"{filename}{SEPARATOR}{filesize}".encode())
-            progress = tqdm.tqdm(range(filesize), "SENDING MODEL TO " + addr[0])
+            progress = tqdm.tqdm(range(filesize), "SENDING MODEL TO " + str(addr[1]))
             with open(filename, "rb") as file:
                 while True:
                     read = file.read(BUFFER_SIZE)
@@ -273,7 +275,7 @@ class Server:
                 self.empty_socket(conn)
                 conn.sendall(values.metadata_valid.encode())
                 result = True
-            except: # INVALID METADATA
+            except:  # INVALID METADATA
                 self.empty_socket(conn)
                 conn.sendall(values.metadata_invalid.encode())
                 result = False
@@ -282,7 +284,7 @@ class Server:
                 print("\nRECEIVED NEW MODEL INFO: ", filename, " SIZE: ", filesize)
                 # RECEIVE FILE
                 progress = tqdm.tqdm(
-                    range(filesize), "RECEIVING UPDATED MODEL FROM: " + addr[0]
+                    range(filesize), "RECEIVING UPDATED MODEL FROM: " + str(addr[1])
                 )
                 p = 0
                 with open(path_to_save, "wb") as file:
@@ -338,28 +340,28 @@ class Server:
     def handle_client(self, conn, addr):
         # HANDLES CLIENT, OPEN A SEPARATE THREAD FOR EVERY CLIENT
         result = False
-        print("\nCONNECT TO CLIENT: " + addr[0])
+        print("\nCONNECT TO CLIENT: " + str(addr[1]))
         token = conn.recv(TOKEN_BUFFER_SIZE).decode()  # GET TOKEN
         print("\nRECEIVED TOKEN: " + token)
 
         # HANDLE TOKEN
         if token == values.REQUIRES_TOKEN:  # NEW CLIENT, SEND TOKEN
             token = self.send_token(conn, addr)
-            if not token: # FAILURE IN SENDING TOKEN
+            if not token:  # FAILURE IN SENDING TOKEN
                 self.empty_socket(conn)
                 conn.send(values.send_token_fail.encode())
                 print(values.send_token_fail)
             else:
                 self.client_data[token] = NEW_CLIENT
-        elif self.check_token_validity(token): # INVALID TOKEN, END CONNECTION
+        elif self.check_token_validity(token):  # INVALID TOKEN, END CONNECTION
             self.empty_socket(conn)
             conn.send(values.receive_token_valid.encode())
             response = conn.recv(TOKEN_BUFFER_SIZE).decode()
             print(response)
-        else: # INVALID TOKEN, CLOSE CONNECTION
+        else:  # INVALID TOKEN, CLOSE CONNECTION
             self.empty_socket(conn)
             conn.send(values.receive_token_invalid.encode())
-            print(values.receive_token_invalid)
+            print(values.receive_token_invalid + " " + str(addr[1]))
             conn.close()
             return
 
@@ -372,9 +374,11 @@ class Server:
         elif client_status == GLOBAL_MODEL_SENT:
             result = self.receive_updated_model(conn, addr, token)
         if result:
-            print("QUERY SUCCESSFULLY EXECUTED FOR: " + addr[0] + " TOKEN: " + token)
+            print(
+                "QUERY SUCCESSFULLY EXECUTED FOR: " + str(addr[1]) + " TOKEN: " + token
+            )
         else:
-            print("QUERY FAILED FOR: " + addr[0] + " TOKEN: " + token)
+            print("QUERY FAILED FOR: " + str(addr[1]) + " TOKEN: " + token)
             # query = conn.recv(BUFFER_SIZE).decode()
         conn.close()
 
