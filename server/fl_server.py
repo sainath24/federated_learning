@@ -53,7 +53,7 @@ class fl_server:
         if len(models) == len(client_data.keys()): # DO GLOBAL UPDATE
             self.global_update(models)
             self.server.global_update = True
-            print('\nFL ROUND COMPLETED: ', self.rounds) # TEMP
+            print('\nFL ROUND COMPLETED: ', (self.config["rounds"] - self.rounds + 1)) # TEMP
             self.rounds -=1
         else:
             self.global_update = False

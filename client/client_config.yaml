@@ -3,11 +3,11 @@
 # MODEL
 model_folder: CLIENT_MODEL
 model_name: client.pth
-arch: "resnext101_32x8d"
+arch: "resnet18"
 
 # IP
 HOST: "127.0.0.1"
-PORT: 10987
+PORT: 9865
 
 # DATASET
 dataset: "classification" # choices: classification, detection

@@ -189,7 +189,7 @@ class Client:
                     if result == True:
                         print("\nRECEIVED INFO: ", filename, " SIZE: ", filesize)
                         # RECEIVE FILE
-                        progress = tqdm.tqdm(range(filesize), "RECEIVING " + filename)
+                        progress = tqdm.tqdm(range(filesize), desc="RECEIVING " + filename,position=0,leave=True)
                         p=0
                         with open(path, 'wb') as file:
                             while p < filesize:
@@ -239,7 +239,7 @@ class Client:
                 response = self.s.recv(TOKEN_BUFFER_SIZE).decode() # GET METADATA RESPONSE FROM SERVER
 
                 if response == values.metadata_valid: # VALID METADATA
-                    progress = tqdm.tqdm(range(filesize), "SENDING UPDATED MODEL TO SERVER")
+                    progress = tqdm.tqdm(range(filesize), desc="SENDING UPDATED MODEL TO SERVER",position=0,leave=True)
                     p = 0
                     self.empty_socket()
                     with open(path, 'rb') as file:

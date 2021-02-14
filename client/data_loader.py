@@ -6,7 +6,7 @@ import torch
 
 
 class ClassificationDataset(data.Dataset):
-    def __init__(self, csv_file, path, labels, transform=None):
+    def __init__(self, csv_file, path, labels transform=None,debug=False):
         """
         :param: csv_file - path to csv file with format [Image, Label_Columns]
         :param: path - image dir path
@@ -15,7 +15,10 @@ class ClassificationDataset(data.Dataset):
         """
 
         self.path = path
-        self.data = pd.read_csv(csv_file)
+        if debug:
+            self.data = pd.read_csv(csv_file).head(50)
+        else:
+            self.data = pd.read_csv(csv_file)
         self.transform = transform
         self.labels = labels
 
@@ -67,10 +70,10 @@ def get_classification_dataset(
         labels=test_labels,
     )
     train_loader = data.DataLoader(
-        train_dataset, batch_size=train_bs, shuffle=True, num_workers=0
+        train_dataset, batch_size=train_bs, shuffle=True, num_workers=4
     )
     test_loader = data.DataLoader(
-        test_dataset, batch_size=test_bs, shuffle=False, num_workers=0
+        test_dataset, batch_size=test_bs, shuffle=False, num_workers=4
     )
 
     return train_loader, test_loader

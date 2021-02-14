@@ -4,12 +4,14 @@ defines the training loop.
 
 from tqdm import tqdm
 import torch
+
+
 def train(model, train_loader, optimizer, criterion, epochs, device):
     model.to(device)
-    model.train()    
+    model.train()
     tr_loss = 0
-    
-    tk0 = tqdm(train_loader, desc="Iteration")
+
+    tk0 = tqdm(train_loader, desc="Iteration", position=0, leave=True)
 
     for step, batch in enumerate(tk0):
 
@@ -18,7 +20,7 @@ def train(model, train_loader, optimizer, criterion, epochs, device):
 
         inputs = inputs.to(device, dtype=torch.float)
         labels = labels.to(device, dtype=torch.float)
-        
+
         # Runs the forward pass with autocasting.
         # with autocast():
         outputs = model(inputs)

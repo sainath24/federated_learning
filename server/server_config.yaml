@@ -3,7 +3,7 @@ name: BETA_TEST_V0.1
 model_path: GLOBAL/global_model.pth
 client_updates_path: CLIENT_UPDATES
 
-HOST: "127.0.0.1"
+HOST: ""
 PORT: 9865
 
 #DEEP LEARNING CONFIG
@@ -12,6 +12,6 @@ arch: "resnet18"
 n_classes: 6
 
 # FL PARAMS
-rounds: 15
+rounds: 8
 max_clients: 5
 aggregation: "mean" #choices: mean

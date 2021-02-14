@@ -23,10 +23,18 @@ def check_model_similarity(model1, model2):
     """
     Check if two models are the same.
     """
+    flag = 0
     for p1, p2 in zip(model1.parameters(), model2.parameters()):
         if p1.data.ne(p2.data).sum() > 0:
+            continue
+        else:
+            flag+=1
+            break
+        if flag>0:
+            print('\nMODELS SAME',flag)
+        else:
             print('\nMODELS NOT SAME')
-        print('\nMODELS SAME')
+
 
 def main():
     with open('client_config.yaml') as file:
