@@ -75,6 +75,7 @@ def send_model():
 
         response = make_response(send_file(filepath))
         response.headers['Token'] = values.receive_token_valid
+        response.header['Filesize'] = filesize
 
     else:
         response = make_response()
