@@ -88,7 +88,8 @@ def send_model():
 
         response = make_response(send_file(filepath))
         response.headers['Token'] = values.receive_token_valid
-        response.headers['Filesize'] = filesize
+        response.headers['Filesize'] = str(filesize)
+        response.status_code = values.OK_STATUS
 
     else:
         response = make_response()
@@ -98,7 +99,7 @@ def send_model():
     return response
 
 @app.route('/send_model', methods = ['POST'])
-def recieve_model():
+def receive_model():
     token = request.headers['Token']
     file_size = request.headers['Filesize']
     response = make_response()
@@ -106,9 +107,8 @@ def recieve_model():
     if valid: # RECEIVE MODEL
         model = request.files['model']
         path_to_save = os.path.join(server.client_updates_path, token + ".pth")
-        model.save(path_to_save)
-        saved_size = os.path.getsize(path)
-        if saved_size == file_size: # FILE OK
+        if len(model) == int(file_size): # MODEL IS OK
+            model.save(path_to_save)
             server.server_receive_ok(token)
             response.status_code = values.OK_STATUS
         else:
@@ -136,12 +136,12 @@ def client_received_model():
     
     return response
 
-@app.route('/check_update', methods = ['POST'])
+@app.route('/check_update', methods = ['GET'])
 def check_update():
     token = request.headers['Token']
     valid = auth.check_token_validity(token, server.get_client_data())
     if valid: # SEND UPDATE STATUS
-        if server.global_update:
+        if server.check_global_update_for_client(token):
             return values.MODEL_UPDATE_AVAILABLE
         else:
             return values.NO_MODEL_UPDATE_AVAILABLE
@@ -264,7 +264,6 @@ class Server:
         self.lock.acquire()  # BLOCKS UNTIL LOCK IS ACQUIRED
         self.client_data[token] = GLOBAL_MODEL_SENT
         self.save_client_data()
-        self.check_global_update()
         self.lock.release()
 
         if self.global_update:
@@ -281,6 +280,11 @@ class Server:
     def add_client_to_list(self, token):
         self.client_data[token] = values.NEW_CLIENT
         self.save_client_data()
+    
+    def check_global_update_for_client(self, token):
+        if self.global_update and self.get_client_data()[token] == values.LOCAL_MODEL_RECEIVED:
+            return True
+        return False
 
 
 if __name__ == '__main__':
