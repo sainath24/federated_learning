@@ -236,7 +236,11 @@ class Server:
         self.lock.release()
 
         if result == True:
+            self.rounds -= 1
             self.global_update = True
+        print('\nFL ROUNDS LEFT: ', (self.rounds)) # TEMP
+        if self.rounds < 0:
+            print('FL COMPLETED')
 
 
     def client_receive_ok(self, token):
