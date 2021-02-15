@@ -60,9 +60,11 @@ def main():
     assert len(labels) == n_classes, "ERR: Number of classes should match labels."
 
     client = Client.Client(config)
-    client.connect()
     print("\nCONNECTED TO SERVER")
-    client.get()
+    result = client.get()
+    if result == False: # COULD NOT GET MODEL
+        print('\nCOULD NOT GET MODEL FROM SERVER')
+        exit()
     print("\nSAVED GLOBAL MODEL")
 
     # GET MODEL
@@ -115,17 +117,22 @@ def main():
 
         # SEND TO SERVER
         torch.save(model.state_dict(), client.model_folder + "/" + client.model_name)
-        client.connect()
-        client.send()
+        result = client.send()
+        if result == False:
+            print('\nCOULD NOT SEND TO SERVER')
+            exit()
 
-        # RECEIVE FROM SERVER
-        client.connect()
-        result = client.get()
+        # CHECK FOR UPDATES
+        result = client.check_update()
         while result == False:
             print("\nSERVER HAS NOT UPDATED GLOBAL")
             sleep(30)
-            client.connect()
-            result = client.get()
+            result = client.check_update()
+
+        result = client.get() # GET UPDATED MODEL
+        if result == False:
+            print('\nCOULD NOT GET MODEL FROM SERVER')
+            exit() 
 
         model.load_state_dict(torch.load(client.model_folder + "/" + client.model_name))
         check_model_similarity(temp1, model)
