@@ -1,4 +1,5 @@
 import socket
+from types import MethodType
 import tqdm
 import threading
 import os
@@ -63,6 +64,18 @@ def register_client(self):
             return str(token)
     return values.invalid_request
 
+@app.route('/received_token', methods = ['GET'])
+def client_received_token():
+    token = request.headers['Token']
+    valid = auth.check_token_in_list(token, server.get_token_list)
+    response = make_response()
+    if valid:
+        server.add_client_to_list(token)
+        response.headers['Token'] = values.receive_token_valid
+    else:
+        response.headers['Token'] = values.receive_token_invalid
+    return response
+
 @app.route('/get_model', methods = ['GET'])
 def send_model():
     token = request.headers['Token']
@@ -75,7 +88,7 @@ def send_model():
 
         response = make_response(send_file(filepath))
         response.headers['Token'] = values.receive_token_valid
-        response.header['Filesize'] = filesize
+        response.headers['Filesize'] = filesize
 
     else:
         response = make_response()
@@ -107,19 +120,6 @@ def recieve_model():
 
     return response
 
-@app.route('/check_update', methods = ['POST'])
-def check_update():
-    token = request.headers['Token']
-    valid = auth.check_token_validity(token, server.get_client_data())
-    if valid: # SEND UPDATE STATUS
-        if server.global_update:
-            return values.MODEL_UPDATE_AVAILABLE
-        else:
-            return values.NO_MODEL_UPDATE_AVAILABLE
-    else: # INVALID CLIENT
-        response = make_response()
-        response.status_code = values.INVALID_CLIENT
-
 
 @app.route('/model_received', methods = ['GET'])
 def client_received_model():
@@ -135,6 +135,19 @@ def client_received_model():
         response.headers['Token'] = values.receive_token_invalid
     
     return response
+
+@app.route('/check_update', methods = ['POST'])
+def check_update():
+    token = request.headers['Token']
+    valid = auth.check_token_validity(token, server.get_client_data())
+    if valid: # SEND UPDATE STATUS
+        if server.global_update:
+            return values.MODEL_UPDATE_AVAILABLE
+        else:
+            return values.NO_MODEL_UPDATE_AVAILABLE
+    else: # INVALID CLIENT
+        response = make_response()
+        response.status_code = values.INVALID_CLIENT
 
 class Server:
     def __init__(self, config):
@@ -221,6 +234,9 @@ class Server:
 
     def get_client_data(self):
         return self.client_data
+    
+    def get_token_list(self):
+        return self.tokens
 
     def add_token_to_list(self, token):
         self.tokens[token] = token
@@ -262,6 +278,9 @@ class Server:
         if count == len(self.client_data.keys()):
             self.global_update = False
 
+    def add_client_to_list(self, token):
+        self.client_data[token] = values.NEW_CLIENT
+        self.save_client_data()
 
 
 if __name__ == '__main__':

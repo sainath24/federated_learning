@@ -26,3 +26,9 @@ def check_token_validity(token, client_data):
     if check and check_valid_client(token, client_data):  # VALID HEXADECIMAL TOKEN
         return True
     return False
+
+def check_token_in_list(token, token_list):
+    if token in token_list.keys():
+        return True
+    else:
+        return False
