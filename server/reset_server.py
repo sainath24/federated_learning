@@ -13,4 +13,4 @@ try:
     os.removedirs("CLIENT_UPDATES")
 except:
     pass
-os.system("python main_server.py")
+os.system("python Server.py")

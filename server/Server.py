@@ -23,12 +23,19 @@ from os import path
 import traceback
 import re
 
+from flask import Flask, request, send_file, make_response
+import auth
+import fl_tools
+import yaml
+
 import sys
 
 sys.path.append("../")
 import values
-from values import BUFFER_SIZE, TOKEN_BUFFER_SIZE, SEPARATOR
+from values import BUFFER_SIZE, NO_MODEL_UPDATE_AVAILABLE, TOKEN_BUFFER_SIZE, SEPARATOR
 from values import NEW_CLIENT, LOCAL_MODEL_RECEIVED, GLOBAL_MODEL_SENT
+
+
 
 ## CLIENT STATUS
 # NEW_CLIENT = 0
@@ -44,6 +51,89 @@ from values import NEW_CLIENT, LOCAL_MODEL_RECEIVED, GLOBAL_MODEL_SENT
 # BUFFER_SIZE = 4096
 # SEPARATOR = "&"
 
+app = Flask(__name__)
+
+@app.route('/register_client', methods = ['GET'])
+def register_client(self):
+    registration_token = request.headers['Token']
+    if registration_token == values.REQUIRES_TOKEN: # REGISTER CLIENT
+        token = auth.gen_token(server.tokens)
+        if token != False:
+            server.add_token_to_list(token)
+            return str(token)
+    return values.invalid_request
+
+@app.route('/get_model', methods = ['GET'])
+def send_model():
+    token = request.headers['Token']
+    valid = auth.check_token_validity(token, server.get_client_data())
+    if valid: # SEND MODEL
+
+        filepath = server.model_path
+        filename = os.path.basename(filepath)
+        filesize = os.path.getsize(filepath)
+
+        response = make_response(send_file(filepath))
+        response.headers['Token'] = values.receive_token_valid
+
+    else:
+        response = make_response()
+        response.status_code = values.INVALID_CLIENT
+        response.headers['Token'] = values.receive_token_invalid
+    
+    return response
+
+@app.route('/send_model', methods = ['POST'])
+def recieve_model():
+    token = request.headers['Token']
+    file_size = request.headers['Filesize']
+    response = make_response()
+    valid = auth.check_token_validity(token, server.get_client_data())
+    if valid: # RECEIVE MODEL
+        model = request.files['model']
+        path_to_save = os.path.join(server.client_updates_path, token + ".pth")
+        model.save(path_to_save)
+        saved_size = os.path.getsize(path)
+        if saved_size == file_size: # FILE OK
+            server.server_receive_ok(token)
+            response.status_code = values.OK_STATUS
+        else:
+            response.status_code = values.ERROR_STATUS
+            
+    else: # INVALID CLIENT
+        response.status_code = values.INVALID_CLIENT
+        response.headers['Token'] = values.client_invalid_token
+
+    return response
+
+@app.route('/check_update', methods = ['POST'])
+def check_update():
+    token = request.headers['Token']
+    valid = auth.check_token_validity(token, server.get_client_data())
+    if valid: # SEND UPDATE STATUS
+        if server.global_update:
+            return values.MODEL_UPDATE_AVAILABLE
+        else:
+            return values.NO_MODEL_UPDATE_AVAILABLE
+    else: # INVALID CLIENT
+        response = make_response()
+        response.status_code = values.INVALID_CLIENT
+
+
+@app.route('/model_received', methods = ['GET'])
+def client_received_model():
+    token = request.headers['Token']
+    valid = auth.check_token_validity(token, server.get_client_data())
+    response = make_response()
+    if valid: # CHANGE CLIENT DATA
+        server.client_receive_ok(token)
+        response.headers['Token'] = values.receive_token_valid
+
+    else:
+        response.status_code = values.INVALID_CLIENT
+        response.headers['Token'] = values.receive_token_invalid
+    
+    return response
 
 class Server:
     def __init__(self, config):
@@ -113,7 +203,11 @@ class Server:
         # CONFIG FILE FOR DEEP LEARNING
         self.fl_config = ""
 
-        self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.aggregation = self.config['aggregation']
+        # NO OF ROUNDS OF FL
+        self.rounds = self.config['rounds']
+
+        # self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         print("\nSERVER INITIALISED")
 
     def save_tokens(self):
@@ -127,21 +221,33 @@ class Server:
     def get_client_data(self):
         return self.client_data
 
-    def send_token(self, conn, addr):  # SEND NEW TOKEN TO CLIENT
-        try:
-            # GENERATE NEW TOKEN
-            token = secrets.token_hex(8)
-            while token in self.tokens.keys():
-                token = secrets.token_hex(8)
-            self.tokens[token] = addr[1]
-            self.save_tokens()
+    def add_token_to_list(self, token):
+        self.tokens[token] = token
+        self.save_tokens()
 
-            self.empty_socket(conn)
-            conn.send(token.encode())  # SEND TOKEN TO CLIENT
-            return token
-        except Exception as e:
-            print("\nEXCEPTION IN send_token: ", e)
-        return False
+    def server_receive_ok(self, token):
+        self.lock.acquire()  # BLOCKS UNTIL LOCK IS ACQUIRED
+        self.client_data[token] = LOCAL_MODEL_RECEIVED
+        self.save_client_data()
+        self.lock.release()
+
+        self.lock.acquire()  # BLOCKS UNTIL LOCK IS ACQUIRED
+        result = fl_tools.check_client_data(self.get_client_data(),self.aggregation, self.client_updates_path, self.model_path)  # RUN WITH BLOCKING
+        self.lock.release()
+
+        if result == True:
+            self.global_update = True
+
+
+    def client_receive_ok(self, token):
+        self.lock.acquire()  # BLOCKS UNTIL LOCK IS ACQUIRED
+        self.client_data[token] = GLOBAL_MODEL_SENT
+        self.save_client_data()
+        self.check_global_update()
+        self.lock.release()
+
+        if self.global_update:
+            self.check_global_update()
 
     def check_global_update(self):
         count = 0
@@ -151,250 +257,10 @@ class Server:
         if count == len(self.client_data.keys()):
             self.global_update = False
 
-    def empty_socket(self, sock):
-        while True:
-            ready_to_read, write, error = select.select([sock], [sock], [], 0.5)
-            if len(ready_to_read) == 0:
-                break
-            for s in ready_to_read:
-                sock.recv(BUFFER_SIZE)
 
-    def is_new_client(self, token):
-        if self.client_data[token] == NEW_CLIENT:
-            return True
-        return False
 
-    def should_send_model(self, token):
-        if self.is_new_client(token) or self.global_update:
-            return True
-        return False
-
-    def send_model(self, conn, addr, token):
-        result = False
-        try:
-            if self.should_send_model(token):
-                filepath = self.model_path
-                filename = os.path.basename(filepath)
-                filesize = os.path.getsize(filepath)
-
-                self.empty_socket(conn)
-                conn.sendall(f"{filename}{SEPARATOR}{filesize}".encode())
-
-                response = conn.recv(TOKEN_BUFFER_SIZE).decode()  # GET META DATA OKAY
-                if response == values.metadata_valid:
-                    print(
-                        "\nBUFFER SIZE: ",
-                        BUFFER_SIZE,
-                        " GLOBAL UPDATE: ",
-                        self.global_update,
-                    )
-                    self.empty_socket(conn)
-                    progress = tqdm.tqdm(
-                        range(filesize), "SENDING MODEL TO " + str(addr[1])
-                    )
-                    p = 0
-                    with open(filepath, "rb") as file:
-                        while True:
-                            read = file.read(BUFFER_SIZE)
-                            if not read:
-                                break
-                            conn.sendall(read)
-                            p += len(read)
-                            progress.update(len(read))
-
-                    if p != filesize:  # ERROR IN SEND, FULL FILE HAS NOT BEEN SENT
-                        result = False
-                        print(values.send_model_fail)
-                    # GET LOCK AND WRITE TO CLIENT DATA
-                    else:
-                        self.lock.acquire()  # BLOCKS UNTIL LOCK IS ACQUIRED
-                        self.client_data[token] = GLOBAL_MODEL_SENT
-                        self.save_client_data()
-                        self.check_global_update()
-                        # if self.check_client != None:
-                        #     self.check_client() # RUN WITH BLOCKING
-                        self.lock.release()
-                        result = True
-                elif (
-                    response == values.metadata_invalid
-                ):  # META DATA ERROR, CLIENT WILL RETRY
-                    print(values.metadata_invalid)
-                    result = False
-                else:  # INVALID RESPONSE FROM CLIENT
-                    print(values.client_invalid_response)
-                    result = False
-
-            else:  # DO NOT SEND MODEL
-                self.empty_socket(conn)
-                conn.send(values.no_update_available.encode())
-                print(values.no_update_available)
-                result = True
-
-            # RECEIVE OK RESPONSE FROM CLIENT
-            if result == True:
-                response = conn.recv(TOKEN_BUFFER_SIZE).decode()
-                print("\nRESPONSE FROM CLIENT: ", response)
-
-        except Exception as e:
-            print("\nEXCEPTION IN send_model: ", e)
-            traceback.print_exc()
-            return False
-
-        return result
-
-    def send_config(self, conn, addr, token):
-        try:
-            filepath = self.fl_config
-            filename = os.path.basename(filepath)
-            filesize = os.path.getsize(filepath)
-            conn.send(f"{filename}{SEPARATOR}{filesize}".encode())
-            progress = tqdm.tqdm(range(filesize), "SENDING MODEL TO " + str(addr[1]))
-            with open(filename, "rb") as file:
-                while True:
-                    read = file.read(BUFFER_SIZE)
-                    if not read:
-                        break
-                    conn.sendall(read)
-                    progress.update(len(read))
-        except Exception as e:
-            print("\nEXCEPTION IN send_config: ", e)
-            return False
-
-        return True
-
-    def receive_updated_model(self, conn, addr, token):
-        result = False
-        try:
-            # RECEIVE DATA ON FILE
-            data = conn.recv(BUFFER_SIZE).decode()
-            try:
-                filename, filesize = data.split(SEPARATOR)
-                filesize = int(filesize)
-                path_to_save = os.path.join(self.client_updates_path, token + ".pth")
-
-                self.empty_socket(conn)
-                conn.sendall(values.metadata_valid.encode())
-                result = True
-            except:  # INVALID METADATA
-                self.empty_socket(conn)
-                conn.sendall(values.metadata_invalid.encode())
-                result = False
-
-            if result == True:
-                print("\nRECEIVED NEW MODEL INFO: ", filename, " SIZE: ", filesize)
-                # RECEIVE FILE
-                progress = tqdm.tqdm(
-                    range(filesize), "RECEIVING UPDATED MODEL FROM: " + str(addr[1])
-                )
-                p = 0
-                with open(path_to_save, "wb") as file:
-                    while p < filesize:
-                        # sleep(3)
-                        data = conn.recv(BUFFER_SIZE)
-                        if not data:
-                            break
-                        file.write(data)
-                        p = p + len(data)
-                        progress.update(len(data))
-
-                if p == filesize:  # FULL MODEL RECEIVED
-                    # GET LOCK AND WRITE TO CLIENT DATA
-                    self.lock.acquire()  # BLOCKS UNTIL LOCK IS ACQUIRED
-                    self.client_data[token] = LOCAL_MODEL_RECEIVED
-                    self.save_client_data()
-                    # if self.check_client != None:
-                    self.lock.release()
-                    result = True
-
-                    # SEND OK
-                    self.empty_socket(conn)
-                    conn.send(values.receive_model_success.encode())
-                    print(values.receive_model_success)
-
-                    self.lock.acquire()  # BLOCKS UNTIL LOCK IS ACQUIRED
-                    self.check_client()  # RUN WITH BLOCKING
-                    self.lock.release()
-                else:
-                    result = False
-                    print(values.receive_model_fail)
-
-        except Exception as e:
-            print("\nEXCEPTION IN receive_update_model: ", e)
-            print(values.receive_model_fail)
-            traceback.print_exc()
-            result = False
-
-        return result
-
-    def check_valid_client(self, token):
-        if token in self.get_client_data().keys():
-            return True
-        return False
-
-    def check_token_validity(self, token):
-        check = re.fullmatch(values.TOKEN_REGEX, token)
-        if check and self.check_valid_client(token):  # VALID HEXADECIMAL TOKEN
-            return True
-        return False
-
-    def handle_client(self, conn, addr):
-        # HANDLES CLIENT, OPEN A SEPARATE THREAD FOR EVERY CLIENT
-        result = False
-        print("\nCONNECT TO CLIENT: " + str(addr[1]))
-        token = conn.recv(TOKEN_BUFFER_SIZE).decode()  # GET TOKEN
-        print("\nRECEIVED TOKEN: " + token)
-
-        # HANDLE TOKEN
-        if token == values.REQUIRES_TOKEN:  # NEW CLIENT, SEND TOKEN
-            token = self.send_token(conn, addr)
-            if not token:  # FAILURE IN SENDING TOKEN
-                self.empty_socket(conn)
-                conn.send(values.send_token_fail.encode())
-                print(values.send_token_fail)
-            else:
-                self.client_data[token] = NEW_CLIENT
-        elif self.check_token_validity(token):  # INVALID TOKEN, END CONNECTION
-            self.empty_socket(conn)
-            conn.send(values.receive_token_valid.encode())
-            response = conn.recv(TOKEN_BUFFER_SIZE).decode()
-            print(response)
-        else:  # INVALID TOKEN, CLOSE CONNECTION
-            self.empty_socket(conn)
-            conn.send(values.receive_token_invalid.encode())
-            print(values.receive_token_invalid + " " + str(addr[1]))
-            conn.close()
-            return
-
-        # HANDLE CLIENT
-        client_status = self.client_data[token]
-        if client_status == NEW_CLIENT or client_status == LOCAL_MODEL_RECEIVED:
-            result = self.send_model(conn, addr, token)
-        # elif client_status == FRESH_CLIENT: # TODO: Handle sending config for fresh client
-        #     result = self.send_config(conn, addr, token)
-        elif client_status == GLOBAL_MODEL_SENT:
-            result = self.receive_updated_model(conn, addr, token)
-        if result:
-            print(
-                "QUERY SUCCESSFULLY EXECUTED FOR: " + str(addr[1]) + " TOKEN: " + token
-            )
-        else:
-            print("QUERY FAILED FOR: " + str(addr[1]) + " TOKEN: " + token)
-            # query = conn.recv(BUFFER_SIZE).decode()
-        conn.close()
-
-    def start(self, connections, check_client_data=None):
-        try:
-            self.check_client = check_client_data
-            self.s.bind((self.HOST, self.PORT))
-            self.s.listen(connections)
-            print("\nSERVER STARTED\n")
-            while True:
-                conn, addr = self.s.accept()
-                client_thread = threading.Thread(
-                    target=self.handle_client, args=[conn, addr]
-                )
-                client_thread.start()
-        except Exception as e:
-            print("\nEXCEPTION IN start: ", e)
-            return False
-        return True
+if __name__ == '__main__':
+    with open('server_config.yaml') as file:
+        config = yaml.safe_load(file)
+    server = Server(config)
+    app.run(server.HOST, port = server.PORT, threaded = True)
