@@ -1,3 +1,8 @@
+DETECTION_MODE = "detection"
+CLASSIFICATION_MODE = "classification"
+
+TOKEN_FILE = "tokens.pkl"
+CLIENT_DATA_FILE = "client_data.pkl"
 TOKEN_BUFFER_SIZE = 4096  # 16
 BUFFER_SIZE = 4096
 SEPARATOR = "&"
