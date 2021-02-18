@@ -1,5 +1,7 @@
 # CONFIGURATION FILE FOR CLIENT
 
+mode: "classification" # choices: classification, detection
+
 # MODEL
 model_folder: CLIENT_MODEL
 model_name: client.pth
@@ -12,7 +14,6 @@ PORT: 9865
 #CLIENT PORT
 CLIENT_PORT: 52475
 # DATASET
-dataset: "classification" # choices: classification, detection
 labels:
   [
     "epidural",

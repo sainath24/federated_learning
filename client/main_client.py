@@ -43,7 +43,7 @@ def main():
     epochs = config["epochs"]
 
     lr = config["lr"]
-    ds_type = config["dataset"]
+    mode = config["mode"]
     if config["device"]:
         device = torch.device(config["device"])
     else:
@@ -68,7 +68,37 @@ def main():
     print("\nSAVED GLOBAL MODEL")
 
     # GET MODEL
-    model = m.Model(config["arch"], n_classes)
+    if mode == "detection":
+        train_loader, test_loader = dl.get_detection_dataset(
+            train_csv_file=config["train_csv_file"],
+            train_path=config["train_image_dir"],
+            train_transform=t.transform_train,
+            train_labels=labels,
+            train_bs=config["train_batch_size"],
+            test_csv_file=config["test_csv_file"],
+            test_path=config["test_image_dir"],
+            test_transform=t.transform_test,
+            test_labels=[],
+            test_bs=config["test_batch_size"],
+            debug=True,
+        )
+        model = m.DetectionModel(config["arch"], n_classes)
+    else:
+        # default is classification
+        train_loader, test_loader = dl.get_classification_dataset(
+            train_csv_file=config["train_csv_file"],
+            train_path=config["train_image_dir"],
+            train_transform=t.transform_train,
+            train_labels=labels,
+            train_bs=config["train_batch_size"],
+            test_csv_file=config["test_csv_file"],
+            test_path=config["test_image_dir"],
+            test_transform=t.transform_test,
+            test_labels=[],
+            test_bs=config["test_batch_size"],
+            debug=True,
+        )
+        model = m.ClassificationModel(config["arch"], n_classes)
 
     model.load_state_dict(torch.load(client.model_folder + "/" + client.model_name))
 
@@ -84,20 +114,7 @@ def main():
 
     time0 = time()
 
-    if ds_type == "classification":
-        train_loader, test_loader = dl.get_classification_dataset(
-            train_csv_file=config["train_csv_file"],
-            train_path=config["train_image_dir"],
-            train_transform=t.transform_train,
-            train_labels=labels,
-            train_bs=config["train_batch_size"],
-            test_csv_file=config["test_csv_file"],
-            test_path=config["test_image_dir"],
-            test_transform=t.transform_test,
-            test_labels=[],
-            test_bs=config["test_batch_size"],
-            debug=True,
-        )
+    
     for epoch in range(epochs):
 
         print("Epoch {}/{}".format(epoch, epochs - 1))
@@ -143,5 +160,5 @@ def main():
 if __name__ == "__main__":
     try:
         main()
-    except:
+    except Exception as e:
         traceback.print_exc()
