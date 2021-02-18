@@ -53,7 +53,7 @@ def check_client_data(client_data, aggregation_technique, client_updates_path, s
         print('\nTOTAL CLIENTS: ', total_clients)
         print('\nWAITING CLIENTS: ', waiting_clients)
         if waiting_clients == total_clients and len(models) == len(client_data.keys()):# EVERYONE HAS SENT MODEL
-            result = global_update(models, aggregation_technique, client_updates_path)
+            result = global_update(models, aggregation_technique, client_updates_path, server_model_path)
             return result
 
     except Exception as e:
