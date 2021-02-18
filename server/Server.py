@@ -55,7 +55,7 @@ from values import NEW_CLIENT, LOCAL_MODEL_RECEIVED, GLOBAL_MODEL_SENT
 app = Flask(__name__)
 
 @app.route('/register_client', methods = ['GET'])
-def register_client(self):
+def register_client():
     registration_token = request.headers['Token']
     if registration_token == values.REQUIRES_TOKEN: # REGISTER CLIENT
         token = auth.gen_token(server.tokens)
@@ -67,7 +67,7 @@ def register_client(self):
 @app.route('/received_token', methods = ['GET'])
 def client_received_token():
     token = request.headers['Token']
-    valid = auth.check_token_in_list(token, server.get_token_list)
+    valid = auth.check_token_in_list(token, server.get_token_list())
     response = make_response()
     if valid:
         server.add_client_to_list(token)
@@ -163,7 +163,7 @@ class Server:
             with open(values.TOKEN_FILE, "rb") as file:
                 self.tokens = pickle.load(file)
         else:
-            self.tokens = {}  # CREATE EMPTY TOKENS LIST
+            self.tokens = {'default':0}  # CREATE EMPTY TOKENS LIST
 
         # OPEN CLIENT DATA
         if os.path.isfile(values.CLIENT_DATA_FILE):  # CLIENT DATA EXISTS
