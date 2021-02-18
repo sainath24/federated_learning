@@ -76,8 +76,8 @@ class Client:
         except Exception as e:
             print("\nMODEL NAME NOT FOUND, USING DEFAULT NAME model.pth")
             self.model_name = "model.pth"
-
-        self.url = 'http://' + self.HOST + ':' + str(self.PORT)
+            
+        self.url = self.HOST
 
         self.handle_token()
         print('\nCLIENT INITIALISED')
@@ -114,10 +114,12 @@ class Client:
         file.close()
 
     def handle_token(self):
+        result = False
         try:
             if os.path.isfile("token.pkl"):  # TOKEN IS PRESENT
                 with open("token.pkl", "rb") as file:
                     self.token = pickle.load(file)
+                    result = True
             else:  # NEW CLIENT, REQUIRES TOKEN
                 result = self.request_token()
             return result
