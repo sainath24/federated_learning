@@ -168,17 +168,18 @@ class Server:
         # CREATE LOCK OBJECT
         self.lock = threading.Lock()
         self.global_update = False
+        self.mode = config["mode"]
 
         # OPEN TOKEN DATA
-        if os.path.isfile("tokens.pkl"):  # TOKENS FILE EXISTS
-            with open("tokens.pkl", "rb") as file:
+        if os.path.isfile(values.TOKEN_FILE):  # TOKENS FILE EXISTS
+            with open(values.TOKEN_FILE, "rb") as file:
                 self.tokens = pickle.load(file)
         else:
             self.tokens = {'default':0}  # CREATE EMPTY TOKENS LIST
 
         # OPEN CLIENT DATA
-        if os.path.isfile("client_data.pkl"):  # CLIENT DATA EXISTS
-            with open("client_data.pkl", "rb") as file:
+        if os.path.isfile(values.CLIENT_DATA_FILE):  # CLIENT DATA EXISTS
+            with open(values.CLIENT_DATA_FILE, "rb") as file:
                 self.client_data = pickle.load(file)
         else:
             self.client_data = {}  # STORE CLIENT INFO
@@ -196,7 +197,7 @@ class Server:
                 print("\nPATH NOT FOUND, CREATING FOLDER")
                 try:
                     os.makedirs(self.client_updates_path)
-                except:
+                except Exception as e:
                     print("\nUNABLE TO CREATE PATH")
                     if not os.path.isdir("CLIENT_UPDATES"):
                         print("CREATING DEFAULT FOLDER..")
@@ -219,21 +220,20 @@ class Server:
         if not os.path.isfile(self.config["model_path"]):
             self.model_path = self.config["model_path"]
             print("\nERROR: UNABLE TO FIND MODEL, SERVER WILL CREATE MODEL")
+            if mode == values.DETECTION_MODE:
+                model = m.DetectionModel(config["arch"], self.config["n_classes"])
+            else:
+                # default is classification
+                model = m.Model(self.config["arch"], self.config["n_classes"])
 
-            model = m.Model(self.config["arch"], self.config["n_classes"])
             torch.save(model.state_dict(), self.model_path)
         else:
             self.model_path = self.config["model_path"]
 
-        # TODO:
-        # CONFIG FILE FOR DEEP LEARNING
-        self.fl_config = ""
-
         self.aggregation = self.config['aggregation']
         # NO OF ROUNDS OF FL
         self.rounds = self.config['rounds']
-
-        # self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        
         print("\nSERVER INITIALISED")
 
     def save_tokens(self):
