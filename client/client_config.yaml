@@ -1,6 +1,8 @@
 # CONFIGURATION FILE FOR CLIENT
 
 mode: "classification" # choices: classification, detection
+send_after_epoch: 3 # Integer that signifies when to send update to server
+weight_update: "uga" # choices: uga (Unbiased Gradient Aggregation), normal (Normal Backpropagation)
 
 # MODEL
 model_folder: CLIENT_MODEL
