@@ -220,11 +220,11 @@ class Server:
         if not os.path.isfile(self.config["model_path"]):
             self.model_path = self.config["model_path"]
             print("\nERROR: UNABLE TO FIND MODEL, SERVER WILL CREATE MODEL")
-            if mode == values.DETECTION_MODE:
+            if self.mode == values.DETECTION_MODE:
                 model = m.DetectionModel(config["arch"], self.config["n_classes"])
             else:
                 # default is classification
-                model = m.Model(self.config["arch"], self.config["n_classes"])
+                model = m.ClassificationModel(self.config["arch"], self.config["n_classes"])
 
             torch.save(model.state_dict(), self.model_path)
         else:
@@ -258,9 +258,7 @@ class Server:
         self.lock.acquire()  # BLOCKS UNTIL LOCK IS ACQUIRED
         self.client_data[token] = LOCAL_MODEL_RECEIVED
         self.save_client_data()
-        self.lock.release()
 
-        self.lock.acquire()  # BLOCKS UNTIL LOCK IS ACQUIRED
         result = fl_tools.check_client_data(self.get_client_data(),self.aggregation, self.client_updates_path, self.model_path)  # RUN WITH BLOCKING
         self.lock.release()
 
@@ -270,6 +268,7 @@ class Server:
         print('\nFL ROUNDS LEFT: ', (self.rounds)) # TEMP
         if self.rounds < 0:
             print('FL COMPLETED')
+            exit()
 
 
     def client_receive_ok(self, token):
