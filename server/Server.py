@@ -208,11 +208,12 @@ class Server:
         if not os.path.isfile(self.config["model_path"]):
             self.model_path = self.config["model_path"]
             print("\nERROR: UNABLE TO FIND MODEL, SERVER WILL CREATE MODEL")
-            if mode == values.DETECTION_MODE:
+            if self.mode == values.DETECTION_MODE:
                 model = m.DetectionModel(config["arch"], self.config["n_classes"])
             else:
                 # default is classification
-                model = m.Model(self.config["arch"], self.config["n_classes"])
+                model = m.ClassificationModel(
+                    self.config["arch"], self.config["n_classes"])
 
             torch.save(model.state_dict(), self.model_path)
         else:
