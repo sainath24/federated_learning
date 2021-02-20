@@ -1,8 +1,11 @@
 import pandas as pd
-from torch.utils import data
+import numpy as np
+
 import os
 import cv2
 import torch
+
+from torch.utils import data
 
 
 class ClassificationDataset(data.Dataset):
@@ -80,3 +83,78 @@ def get_classification_dataset(
     )
 
     return train_loader, test_loader
+
+
+class ObjectDetectionDataset(data.Dataset):
+    def __init__(self, csv_file, path, labels, transform=None, debug=False):
+        super().__init__()
+        if debug:
+            self.data = pd.read_csv(csv_file).head(50)
+        else:
+            self.data = pd.read_csv(csv_file)
+        self.image_ids = self.data['patientId'].unique()
+        self.image_dir = path
+        self.transforms = transform
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, index: int):
+
+        image_id = self.image_ids[index]
+        records = self.df[self.df['patientId'] == image_id]
+
+        image = cv2.imread(
+            f'{self.image_dir}/{image_id}.jpg', cv2.IMREAD_COLOR)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB).astype(np.float32)
+        image /= 255.0
+
+        boxes = records[['x', 'y', 'width', 'height']].values
+        boxes[:, 2] = boxes[:, 0] + boxes[:, 2]
+        boxes[:, 3] = boxes[:, 1] + boxes[:, 3]
+
+        area = (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 2] - boxes[:, 0])
+        area = torch.as_tensor(area, dtype=torch.float32)
+
+        # there is only one class
+        labels = torch.ones((records.shape[0],), dtype=torch.int64)
+
+        # suppose all instances are not crowd
+        iscrowd = torch.zeros((records.shape[0],), dtype=torch.int64)
+
+        target = {}
+        target['boxes'] = boxes
+        target['labels'] = labels
+        # target['masks'] = None
+        target['patientId'] = torch.tensor([index])
+        target['area'] = area
+        target['iscrowd'] = iscrowd
+
+        if self.transforms:
+            sample = {
+                'image': image,
+                'bboxes': target['boxes'],
+                'labels': labels
+            }
+            sample = self.transforms(**sample)
+            image = sample['image']
+
+            target['boxes'] = torch.stack(
+                tuple(map(torch.FloatTensor, zip(*sample['bboxes'])))).permute(1, 0)
+
+        return image, target, image_id
+
+
+def get_detection_dataset(
+    train_csv_file,
+    train_path,
+    train_transform,
+    train_labels,
+    train_bs,
+    test_csv_file,
+    test_path,
+    test_transform,
+    test_labels,
+    test_bs,
+    debug=False,
+):
