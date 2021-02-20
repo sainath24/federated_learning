@@ -86,7 +86,7 @@ def get_classification_dataset(
 
 
 class ObjectDetectionDataset(data.Dataset):
-    def __init__(self, csv_file, path, labels, transform=None, debug=False):
+    def __init__(self, csv_file, path, transform=None, debug=False):
         super().__init__()
         if debug:
             self.data = pd.read_csv(csv_file).head(50)
@@ -145,16 +145,70 @@ class ObjectDetectionDataset(data.Dataset):
         return image, target, image_id
 
 
+def collate_func(batch):
+    return tuple(zip(*batch))
+
 def get_detection_dataset(
     train_csv_file,
     train_path,
     train_transform,
-    train_labels,
     train_bs,
     test_csv_file,
     test_path,
     test_transform,
-    test_labels,
     test_bs,
     debug=False,
 ):
+
+    train_df = pd.read_csv(train_csv_file)
+
+    train_df_pos = pd.DataFrame(
+        columns=['patientId', 'x', 'y', 'width', 'height'])
+
+    k = 0
+    for i in range(len(train_df)):
+        if train_df.loc[i]['Target'] == 1:
+            train_df_pos.loc[k] = train_df.loc[i]
+            k += 1
+    filename = train_csv_file.split(".")[0]
+    extension = train_csv_file.split(".")[1]
+    train_file = filename + "_modified" + extension
+    train_df_pos.to_csv(train_file, index=False)
+
+    train_dataset = ObjectDetectionDataset(
+        csv_file=train_file, 
+        path=train_path, 
+        transform=train_transform, 
+        debug=False
+    )
+
+    test_df = pd.read_csv(test_csv_file)
+
+    test_df_pos = pd.DataFrame(
+        columns=['patientId', 'x', 'y', 'width', 'height'])
+
+    k = 0
+    for i in range(len(test_df)):
+        if test_df.loc[i]['Target'] == 1:
+            test_df_pos.loc[k] = test_df.loc[i]
+            k += 1
+    filename = test_csv_file.split(".")[0]
+    extension = test_csv_file.split(".")[1]
+    test_file = filename + "_modified" + extension
+    test_df_pos.to_csv(test_file, index=False) 
+    test_dataset = ObjectDetectionDataset(
+        csv_file=test_file,
+        path=test_path,
+        transform=test_transform,
+        debug=False
+    )
+
+
+    train_loader = data.DataLoader(
+        train_dataset, batch_size=train_bs, shuffle=True, num_workers=4, collate_fn=collate_func
+    )
+    test_loader = data.DataLoader(
+        test_dataset, batch_size=test_bs, shuffle=False, num_workers=4, collate_fn=collate_func
+    )
+
+    return train_loader, test_loader
