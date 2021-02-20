@@ -31,6 +31,7 @@ import yaml
 
 import sys
 
+
 sys.path.append("../")
 import values
 from values import BUFFER_SIZE, NO_MODEL_UPDATE_AVAILABLE, TOKEN_BUFFER_SIZE, SEPARATOR
@@ -98,6 +99,10 @@ def send_model():
     
     return response
 
+def save_model(token, file, path):
+    file.save(path)
+    server.server_receive_ok(token)
+
 @app.route('/send_model', methods = ['POST'])
 def receive_model():
     token = request.headers['Token']
@@ -105,14 +110,21 @@ def receive_model():
     response = make_response()
     valid = auth.check_token_validity(token, server.get_client_data())
     if valid: # RECEIVE MODEL
+        print('\nVALID CLIENT\n')
         model = request.files['model']
+        print('\nGOT MODEL FROM REQUEST\n')
         path_to_save = os.path.join(server.client_updates_path, token + ".pth")
-        if len(model) == int(file_size): # MODEL IS OK
-            model.save(path_to_save)
-            server.server_receive_ok(token)
-            response.status_code = values.OK_STATUS
-        else:
-            response.status_code = values.ERROR_STATUS
+        print('\nRECEIVED HEADER FILESIZE: ', file_size)
+        print('\npath: ', path_to_save)
+        # print('\nCALCULATED FILE SIZE: ', len(model.read()))
+        # if len(model.read()) == int(file_size): # MODEL IS OK
+        # thread = threading.Thread(target = save_model, args=[token, model, path_to_save]).start()
+        model.save(path_to_save)
+        print('\nMODEL SAVED\n')
+        server.server_receive_ok(token)
+        response.status_code = values.OK_STATUS
+        # else:
+        #     response.status_code = values.ERROR_STATUS
             
     else: # INVALID CLIENT
         response.status_code = values.INVALID_CLIENT
@@ -209,11 +221,13 @@ class Server:
             self.model_path = self.config["model_path"]
             print("\nERROR: UNABLE TO FIND MODEL, SERVER WILL CREATE MODEL")
             if self.mode == values.DETECTION_MODE:
-                model = m.DetectionModel(config["arch"], self.config["n_classes"])
+                model = m.DetectionModel(self.config["arch"], self.config["n_classes"])
             else:
                 # default is classification
                 model = m.ClassificationModel(
-                    self.config["arch"], self.config["n_classes"])
+                    self.config["arch"], 
+                    self.config["n_classes"]
+                )
 
             torch.save(model.state_dict(), self.model_path)
         else:
@@ -247,9 +261,7 @@ class Server:
         self.lock.acquire()  # BLOCKS UNTIL LOCK IS ACQUIRED
         self.client_data[token] = LOCAL_MODEL_RECEIVED
         self.save_client_data()
-        self.lock.release()
 
-        self.lock.acquire()  # BLOCKS UNTIL LOCK IS ACQUIRED
         result = fl_tools.check_client_data(self.get_client_data(),self.aggregation, self.client_updates_path, self.model_path)  # RUN WITH BLOCKING
         self.lock.release()
 
@@ -259,6 +271,7 @@ class Server:
         print('\nFL ROUNDS LEFT: ', (self.rounds)) # TEMP
         if self.rounds < 0:
             print('FL COMPLETED')
+            exit()
 
 
     def client_receive_ok(self, token):
@@ -271,12 +284,13 @@ class Server:
             self.check_global_update()
 
     def check_global_update(self):
-        count = 0
-        for k, v in self.client_data.items():
-            if v == GLOBAL_MODEL_SENT:
-                count += 1
-        if count == len(self.client_data.keys()):
-            self.global_update = False
+        if self.global_update:
+            count = 0
+            for k, v in self.client_data.items():
+                if v == GLOBAL_MODEL_SENT:
+                    count += 1
+            if count == len(self.client_data.keys()):
+                self.global_update = False
 
     def add_client_to_list(self, token):
         self.client_data[token] = values.NEW_CLIENT

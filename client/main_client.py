@@ -42,8 +42,12 @@ def main():
         config = yaml.safe_load(file)
     epochs = config["epochs"]
 
+
     lr = config["lr"]
     mode = config["mode"]
+    send_after_epoch = config["send_after_epoch"]
+    weight_update = config["weight_update"]
+
     if config["device"]:
         device = torch.device(config["device"])
     else:
@@ -102,6 +106,10 @@ def main():
 
     model.load_state_dict(torch.load(client.model_folder + "/" + client.model_name))
 
+    # MAKE A COPY OF INITIAL MODEL WEIGHTS IF WEIGHT UPDATE IS UGA
+    if weight_update == "uga": 
+        initial_model_weights = model.state_dict()
+
     criterion = torch.nn.BCEWithLogitsLoss()
     optim_params = [{"params": model.parameters(), "lr": lr}]
     if config["optimizer"] == "SGD":
@@ -125,9 +133,16 @@ def main():
             pass
         else:
             # classification
-            running_loss += train.classification_train(
-                model, train_loader, optimizer, criterion, epochs, device
-            )
+            if weight_update == "normal" or (epoch+1) % send_after_epoch != 0:
+                # TRAIN
+                running_loss += train.classification_train(
+                    model, train_loader, optimizer, criterion, epochs, device
+                )
+
+            elif weight_update == "uga" and (epoch+1) % send_after_epoch == 0:
+                running_loss += train.train_last_uga(
+                    initial_model_weights, model, train_loader, optimizer, criterion, epochs, device
+                )
 
         print(
             "Epoch {} - Training loss: {}".format(
@@ -136,27 +151,29 @@ def main():
         )
         temp1 = deepcopy(model)
 
-        # SEND TO SERVER
+        # SAVE MODEL AFTER EVERY EPOCH
         torch.save(model.state_dict(), client.model_folder + "/" + client.model_name)
-        result = client.send()
-        if result == False:
-            print('\nCOULD NOT SEND TO SERVER')
-            exit()
 
-        # CHECK FOR UPDATES
-        result = client.check_update()
-        while result == False:
-            print("\nSERVER HAS NOT UPDATED GLOBAL")
-            sleep(30)
+        if (epoch+1) % send_after_epoch == 0: # SEND TO SERVER
+            result = client.send()
+            if result == False:
+                print('\nCOULD NOT SEND TO SERVER')
+                exit()
+
+            # CHECK FOR UPDATES
             result = client.check_update()
+            while result == False:
+                print("\nSERVER HAS NOT UPDATED GLOBAL")
+                sleep(30)
+                result = client.check_update()
 
-        result = client.get() # GET UPDATED MODEL
-        if result == False:
-            print('\nCOULD NOT GET MODEL FROM SERVER')
-            exit() 
+            result = client.get() # GET UPDATED MODEL
+            if result == False:
+                print('\nCOULD NOT GET MODEL FROM SERVER')
+                exit() 
 
-        model.load_state_dict(torch.load(client.model_folder + "/" + client.model_name))
-        check_model_similarity(temp1, model)
+            model.load_state_dict(torch.load(client.model_folder + "/" + client.model_name))
+            check_model_similarity(temp1, model)
 
     print("\nTraining Time (in minutes) =", (time() - time0) / 60)
 
