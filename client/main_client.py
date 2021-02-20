@@ -121,9 +121,13 @@ def main():
         print("-" * 10)
         running_loss = 0
         # TRAIN
-        running_loss += train.train(
-            model, train_loader, optimizer, criterion, epochs, device
-        )
+        if mode == "detection":
+            pass
+        else:
+            # classification
+            running_loss += train.classification_train(
+                model, train_loader, optimizer, criterion, epochs, device
+            )
 
         print(
             "Epoch {} - Training loss: {}".format(
