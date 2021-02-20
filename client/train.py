@@ -6,7 +6,7 @@ from tqdm import tqdm
 import torch
 
 
-def classification_train(model, train_loader, optimizer, criterion, epochs, device):
+def classification_train(model, train_loader, optimizer, criterion, device):
     model.to(device)
     model.train()
     tr_loss = 0
@@ -39,7 +39,7 @@ def classification_train(model, train_loader, optimizer, criterion, epochs, devi
         # scaler.update()
     return tr_loss.item()
 
-def train_last_uga(initial_model_weights, model, train_loader, optimizer, criterion, epochs, device):
+def train_last_uga(initial_model_weights, model, train_loader, optimizer, criterion, device):
     model.to(device)
     model.train()
     tr_loss = 0
@@ -81,3 +81,31 @@ def train_last_uga(initial_model_weights, model, train_loader, optimizer, criter
         # scaler.update()
         
     return tr_loss.item()
+
+
+def detection_train(model, train_loader, optimizer, device):
+    model.to(device)
+    model.train()
+    tr_loss = 0
+
+
+    # loss_hist.reset()
+    tk0 = tqdm(train_loader, desc="Iteration", position=0, leave=True)
+
+    for step, images, targets, image_ids in enumerate(tk0):
+        optimizer.zero_grad()
+
+        images = list(image.to(device) for image in images)
+        targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+
+        loss_dict = model(images, targets)
+
+        losses = sum(loss for loss in loss_dict.values())
+        loss_value = losses.item()
+        tr_loss += loss_value
+
+        losses.backward()
+        optimizer.step()
+
+
+    return tr_loss

@@ -84,7 +84,7 @@ def main():
             test_transform=t.transform_test,
             test_labels=[],
             test_bs=config["test_batch_size"],
-            debug=True,
+            debug=False,
         )
         model = m.DetectionModel(config["arch"], n_classes)
     else:
@@ -100,7 +100,7 @@ def main():
             test_transform=t.transform_test,
             test_labels=[],
             test_bs=config["test_batch_size"],
-            debug=True,
+            debug=False,
         )
         model = m.ClassificationModel(config["arch"], n_classes)
 
@@ -130,18 +130,20 @@ def main():
         running_loss = 0
         # TRAIN
         if mode == "detection":
-            pass
+            running_loss += train.detection_train(
+                model, train_loader, optimizer, criterion, device
+            )
         else:
             # classification
             if weight_update == "normal" or (epoch+1) % send_after_epoch != 0:
                 # TRAIN
                 running_loss += train.classification_train(
-                    model, train_loader, optimizer, criterion, epochs, device
+                    model, train_loader, optimizer, criterion, device
                 )
 
             elif weight_update == "uga" and (epoch+1) % send_after_epoch == 0:
                 running_loss += train.train_last_uga(
-                    initial_model_weights, model, train_loader, optimizer, criterion, epochs, device
+                    initial_model_weights, model, train_loader, optimizer, criterion, device
                 )
 
         print(
