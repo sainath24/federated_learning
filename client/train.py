@@ -6,7 +6,7 @@ from tqdm import tqdm
 import torch
 
 
-def train(model, train_loader, optimizer, criterion, epochs, device):
+def classification_train(model, train_loader, optimizer, criterion, epochs, device):
     model.to(device)
     model.train()
     tr_loss = 0
