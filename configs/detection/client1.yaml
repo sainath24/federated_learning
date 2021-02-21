@@ -1,0 +1,40 @@
+# CONFIGURATION FILE FOR CLIENT
+
+mode: "detection" # choices: classification, detection
+send_after_epoch: 1 # Integer that signifies when to send update to server
+weight_update: "normal" # choices: uga (Unbiased Gradient Aggregation), normal (Normal Backpropagation)
+
+# MODEL
+model_folder: CLIENT_MODEL
+model_name: client.pth
+arch: "fasterrcnn_resnet50_fpn"
+
+# IP
+HOST: "http://127.0.0.1"
+PORT: "9865"
+
+#CLIENT PORT
+CLIENT_PORT: 52475
+# DATASET
+labels: ["pnuemonia", "bg"]
+n_classes: 2 # should match len(labels)
+
+# TRANSFORMS
+# TODO
+
+# TRAINING
+train_csv_file: "/home/kavithas/FL/datasplits_objdet/iid/client1/client1_train.csv.gz"
+train_image_dir: "/home/kavithas/FL/object_detection_centralised/data/train_jpg_images"
+train_batch_size: 8
+
+# PARAMS
+epochs: 15
+lr: 0.00002
+device: "cuda:0" # choices: cpu, cuda
+optimizer: "Adam" # choices: Adam, SGD
+
+# TESTING
+test_csv_file: "/home/kavithas/FL/datasplits_objdet/iid/client1/client1_val.csv.gz"
+test_image_dir: "/home/kavithas/FL/object_detection_centralised/data/train_jpg_images"
+test: False # need to see logic, idea is to use when only training and not validating
+test_batch_size: 1
