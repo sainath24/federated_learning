@@ -92,7 +92,7 @@ class Client:
 
     def received_token(self):
         url = self.url + '/received_token'
-        header = {'Token': self.token, 'Datalength': self.data_length}
+        header = {'Token': self.token, 'Datalength': str(self.data_length)}
         response = requests.get(url, headers = header)
         if response.headers['Token'] == values.receive_token_valid:
             return True
@@ -143,7 +143,7 @@ class Client:
         for i in range(MAX_RETRY):
             try:
                 url = self.url + '/get_model'
-                header = {'Token': self.token, 'Datalength': self.data_length}
+                header = {'Token': self.token, 'Datalength': str(self.data_length)}
 
                 response = requests.get(url, headers= header)
                 if response.status_code == values.OK_STATUS: # CLIENT IS AUTHENTICATED, GET THE MODEL FILE
@@ -175,7 +175,7 @@ class Client:
         for i in range(MAX_RETRY):
             try:
                 url = self.url + '/send_model'
-                header = {'Token': self.token, 'Datalength': self.data_length}
+                header = {'Token': self.token, 'Datalength': str(self.data_length)}
 
                 filename = self.model_name
                 path = os.path.join(self.model_folder, self.model_name)

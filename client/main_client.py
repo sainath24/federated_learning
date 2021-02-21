@@ -82,7 +82,7 @@ def main():
             test_path=config["test_image_dir"],
             test_transform=t.transform_test,
             test_bs=config["test_batch_size"],
-            debug=True,
+            debug=False,
         )
         model = m.DetectionModel(config["arch"], n_classes)
     else:
@@ -98,7 +98,7 @@ def main():
             test_transform=t.transform_test,
             test_labels=[],
             test_bs=config["test_batch_size"],
-            debug=True,
+            debug=False,
         )
         model = m.ClassificationModel(config["arch"], n_classes)
 
