@@ -71,8 +71,6 @@ def client_received_token():
     valid = auth.check_token_in_list(token, server.get_token_list())
     response = make_response()
     if valid:
-        data_length = int(request.headers['Datalength'])
-        server.set_client_data_length(token, data_length)
         server.add_client_to_list(token)
         response.headers['Token'] = values.receive_token_valid
     else:
@@ -85,6 +83,9 @@ def send_model():
     valid = auth.check_token_validity(token, server.get_client_data())
     if valid: # SEND MODEL
 
+        data_length = int(request.headers['Datalength'])
+        server.set_client_data_length(token, data_length)
+        
         filepath = server.model_path
         filename = os.path.basename(filepath)
         filesize = os.path.getsize(filepath)

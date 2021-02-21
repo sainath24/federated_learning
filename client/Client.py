@@ -79,7 +79,7 @@ class Client:
             
         self.url = self.HOST + ":" + self.PORT
 
-        self.data_length = 0
+        self.data_length = -1
 
         self.handle_token()
         print('\nCLIENT INITIALISED')
