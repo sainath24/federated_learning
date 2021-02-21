@@ -71,6 +71,8 @@ def client_received_token():
     valid = auth.check_token_in_list(token, server.get_token_list())
     response = make_response()
     if valid:
+        data_length = request.headers['Datalength']
+        server.set_client_data_length(token, data_length)
         server.add_client_to_list(token)
         response.headers['Token'] = values.receive_token_valid
     else:
@@ -198,6 +200,8 @@ class Server:
         else:
             self.client_data = {}  # STORE CLIENT INFO
 
+        self.client_data_length = {}
+
         print("\nINITIALISING SERVER...")
 
         self.HOST = self.config["HOST"]
@@ -276,7 +280,7 @@ class Server:
         self.client_data[token] = LOCAL_MODEL_RECEIVED
         self.save_client_data()
 
-        result = fl_tools.check_client_data(self.get_client_data(),self.aggregation, self.client_updates_path, self.model_path)  # RUN WITH BLOCKING
+        result = fl_tools.check_client_data(self.get_client_data(), self.client_data_length, self.aggregation, self.client_updates_path, self.model_path)  # RUN WITH BLOCKING
         self.lock.release()
 
         if result == True:
@@ -296,6 +300,9 @@ class Server:
 
         if self.global_update:
             self.check_global_update()
+
+    def set_client_data_length(self, token, length):
+        self.client_data_length[token] = length
 
     def check_global_update(self):
         if self.global_update:

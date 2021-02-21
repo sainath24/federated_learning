@@ -15,17 +15,17 @@ import sys
 sys.path.append("../")
 import values
 
-def global_update(models, aggregation_technique, client_updates_path, server_model_path):
+def global_update(models, data_length, aggregation_technique, client_updates_path, server_model_path):
     total_models = len(models)
     sum = 0 
     model_paths = [os.path.join(client_updates_path, model_path)
                             for model_path in models]
     try:
         if aggregation_technique=='mean': 
-            averaged_state_dict = agg.average(model_paths)
+            averaged_state_dict = agg.average(model_paths, data_length)
         else: 
             # default is FedAvg
-            averaged_state_dict = agg.average(model_paths)
+            averaged_state_dict = agg.average(model_paths, data_length)
 
         # SAVE GLOBAL UPDATE
         torch.save(averaged_state_dict, server_model_path)
@@ -37,10 +37,11 @@ def global_update(models, aggregation_technique, client_updates_path, server_mod
         return False
         
 
-def check_client_data(client_data, aggregation_technique, client_updates_path, server_model_path):
+def check_client_data(client_data, client_data_length, aggregation_technique, client_updates_path, server_model_path):
     print('\nSERVER IN CHECK CLIENT DATA')
     waiting_clients = 0
     models = []
+    data_length = []
     try:
         total_clients = len(client_data.keys())
         # print(data)
@@ -48,12 +49,13 @@ def check_client_data(client_data, aggregation_technique, client_updates_path, s
             if v == values.LOCAL_MODEL_RECEIVED:
                 waiting_clients+=1
                 models.append(str(k) + '.pth')
+                data_length.append(client_data_length[str(k)])
         
         # CHECK IF YOU NEED TO UPDATE CENTRAL MODEL
         print('\nTOTAL CLIENTS: ', total_clients)
         print('\nWAITING CLIENTS: ', waiting_clients)
         if waiting_clients == total_clients and len(models) == len(client_data.keys()):# EVERYONE HAS SENT MODEL
-            result = global_update(models, aggregation_technique, client_updates_path, server_model_path)
+            result = global_update(models, data_length, aggregation_technique, client_updates_path, server_model_path)
             return result
 
     except Exception as e:

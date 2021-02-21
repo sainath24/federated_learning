@@ -71,15 +71,6 @@ def main():
     n_classes = config["n_classes"]
     assert len(labels) == n_classes, "ERR: Number of classes should match labels."
 
-    client = Client.Client(config)
-    heartbeat_scheduler(client);
-    print("\nCONNECTED TO SERVER")
-    result = client.get()
-    if result == False: # COULD NOT GET MODEL
-        print('\nCOULD NOT GET MODEL FROM SERVER')
-        exit()
-    print("\nSAVED GLOBAL MODEL")
-
     # GET MODEL
     if mode == "detection":
         train_loader, test_loader = dl.get_detection_dataset(
@@ -111,7 +102,18 @@ def main():
         )
         model = m.ClassificationModel(config["arch"], n_classes)
 
+    client = Client.Client(config)
+    heartbeat_scheduler(client);
+    print("\nCONNECTED TO SERVER")
+    client.data_length = len(train_loader.dataset)
+    result = client.get()
+    if result == False: # COULD NOT GET MODEL
+        print('\nCOULD NOT GET MODEL FROM SERVER')
+        exit()
+    print("\nSAVED GLOBAL MODEL")
+
     model.load_state_dict(torch.load(client.model_folder + "/" + client.model_name))
+
 
     # MAKE A COPY OF INITIAL MODEL WEIGHTS IF WEIGHT UPDATE IS UGA
     if weight_update == "uga": 
