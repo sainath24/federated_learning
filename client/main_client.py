@@ -140,7 +140,7 @@ def main():
         # TRAIN
         if mode == "detection":
             running_loss += train.detection_train(
-                model, train_loader, optimizer, criterion, device
+                model, train_loader, optimizer, device
             )
         else:
             # classification
