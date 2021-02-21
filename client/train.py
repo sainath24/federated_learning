@@ -37,7 +37,7 @@ def classification_train(model, train_loader, optimizer, criterion, device):
 
         # Updates the scale for next iteration.
         # scaler.update()
-    return tr_loss.item()
+    return tr_loss #.item()
 
 def train_last_uga(initial_model_weights, model, train_loader, optimizer, criterion, device):
     model.to(device)
@@ -80,7 +80,7 @@ def train_last_uga(initial_model_weights, model, train_loader, optimizer, criter
         # Updates the scale for next iteration.
         # scaler.update()
         
-    return tr_loss.item()
+    return tr_loss #.item()
 
 
 def detection_train(model, train_loader, optimizer, device):

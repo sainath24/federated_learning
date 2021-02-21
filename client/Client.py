@@ -209,3 +209,17 @@ class Client:
             return True
         else:
             return False
+
+    def send_heartbeat_to_server(self):
+        try:
+            url = self.url + '/send_heartbeat'
+            header = {'Token': self.token}
+            response = requests.post(url, headers = header)
+            if response.text == values.OK_STATUS:
+                return True
+            else:
+                return False
+        except Exception as e:
+                print("\nEXCEPTION in send: ", e)
+                traceback.print_exc()
+

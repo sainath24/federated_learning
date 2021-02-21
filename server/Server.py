@@ -161,6 +161,20 @@ def check_update():
         response = make_response()
         response.status_code = values.INVALID_CLIENT
 
+@app.route('/send_heartbeat', methods = ["POST"])
+def send_heartbeat():
+    token = request.headers['Token']
+    valid = auth.check_token_validity(token, server.get_client_data())
+    if valid:
+        print(token," client is alive.")
+        response = make_response()
+        response.status_code = values.OK_STATUS 
+    else: # INVALID CLIENT
+        response = make_response()
+        response.status_code = values.INVALID_CLIENT
+    return response
+
+
 class Server:
     def __init__(self, config):
         super().__init__()

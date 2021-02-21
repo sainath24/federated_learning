@@ -19,6 +19,14 @@ from torch import nn, optim
 from copy import deepcopy
 from torch.utils.data import Subset
 
+import threading
+global heartbeat_thread
+def heartbeat_scheduler(client):
+    status = client.send_heartbeat_to_server()
+    heartbeat_thread = threading.Timer(5.0, heartbeat_scheduler, (client,))
+    heartbeat_thread.daemon = True
+    heartbeat_thread.start()
+
 
 def check_model_similarity(model1, model2):
     """
@@ -64,6 +72,7 @@ def main():
     assert len(labels) == n_classes, "ERR: Number of classes should match labels."
 
     client = Client.Client(config)
+    heartbeat_scheduler(client);
     print("\nCONNECTED TO SERVER")
     result = client.get()
     if result == False: # COULD NOT GET MODEL
@@ -82,7 +91,7 @@ def main():
             test_path=config["test_image_dir"],
             test_transform=t.transform_test,
             test_bs=config["test_batch_size"],
-            debug=False,
+            debug=True,
         )
         model = m.DetectionModel(config["arch"], n_classes)
     else:
@@ -98,7 +107,7 @@ def main():
             test_transform=t.transform_test,
             test_labels=[],
             test_bs=config["test_batch_size"],
-            debug=False,
+            debug=True,
         )
         model = m.ClassificationModel(config["arch"], n_classes)
 
@@ -181,5 +190,11 @@ def main():
 if __name__ == "__main__":
     try:
         main()
+        exit(0)
     except Exception as e:
         traceback.print_exc()
+        exit(1)
+        
+
+    
+
