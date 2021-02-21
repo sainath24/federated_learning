@@ -92,7 +92,7 @@ def detection_train(model, train_loader, optimizer, device):
     # loss_hist.reset()
     tk0 = tqdm(train_loader, desc="Iteration", position=0, leave=True)
 
-    for step, images, targets, image_ids in enumerate(tk0):
+    for step, (images, targets, image_ids) in enumerate(tk0):
         optimizer.zero_grad()
 
         images = list(image.to(device) for image in images)
@@ -106,6 +106,5 @@ def detection_train(model, train_loader, optimizer, device):
 
         losses.backward()
         optimizer.step()
-
-
+        
     return tr_loss

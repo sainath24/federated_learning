@@ -31,7 +31,7 @@ class DetectionModel(nn.Module):
             input_features, n_classes
         )
 
-    def forward(self, x):
-        x = self.model(x)
-        return x
+    def forward(self, x, y):
+        l = self.model(x, y)
+        return l
     
