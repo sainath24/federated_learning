@@ -77,7 +77,7 @@ class Client:
             print("\nMODEL NAME NOT FOUND, USING DEFAULT NAME model.pth")
             self.model_name = "model.pth"
             
-        self.url = self.HOST
+        self.url = self.HOST + ":" + self.PORT
 
         self.handle_token()
         print('\nCLIENT INITIALISED')
