@@ -76,11 +76,11 @@ def main():
         train_loader, test_loader = dl.get_detection_dataset(
             train_csv_file=config["train_csv_file"],
             train_path=config["train_image_dir"],
-            train_transform=t.transform_train,
+            train_transform=t.transform_train_detection,
             train_bs=config["train_batch_size"],
             test_csv_file=config["test_csv_file"],
             test_path=config["test_image_dir"],
-            test_transform=t.transform_test,
+            test_transform=t.transform_test_detection,
             test_bs=config["test_batch_size"],
             debug=False,
         )
