@@ -29,9 +29,9 @@ train_batch_size: 8
 
 # PARAMS
 epochs: 15
-lr: 0.00002
-device: "cuda:1" # choices: cpu, cuda
-optimizer: "Adam" # choices: Adam, SGD
+lr: 0.001
+device: "cuda:0" # choices: cpu, cuda
+optimizer: "SGD" # choices: Adam, SGD
 
 # TESTING
 test_csv_file: "/home/kavithas/FL/datasplits_objdet/iid/client2/client2_val.csv.gz"
