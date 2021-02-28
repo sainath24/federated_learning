@@ -181,13 +181,13 @@ def main():
             if result == False:
                 print('\nCOULD NOT GET MODEL FROM SERVER')
                 exit()
-            else:
-                # RESET INTIAL WEIGHTS FOR UGA TO NEW MODEL
-                if weight_update == "uga": 
-                    initial_model_weights = model.state_dict() 
 
             model.load_state_dict(torch.load(client.model_folder + "/" + client.model_name))
             check_model_similarity(temp1, model)
+
+            # RESET INTIAL WEIGHTS FOR UGA TO NEW MODEL
+            if weight_update == "uga": 
+                initial_model_weights = model.state_dict() 
 
     print("\nTraining Time (in minutes) =", (time() - time0) / 60)
 
