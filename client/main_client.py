@@ -114,7 +114,6 @@ def main():
 
     model.load_state_dict(torch.load(client.model_folder + "/" + client.model_name))
 
-
     # MAKE A COPY OF INITIAL MODEL WEIGHTS IF WEIGHT UPDATE IS UGA
     if weight_update == "uga": 
         initial_model_weights = model.state_dict()
@@ -181,7 +180,11 @@ def main():
             result = client.get() # GET UPDATED MODEL
             if result == False:
                 print('\nCOULD NOT GET MODEL FROM SERVER')
-                exit() 
+                exit()
+            else:
+                # RESET INTIAL WEIGHTS FOR UGA TO NEW MODEL
+                if weight_update == "uga": 
+                    initial_model_weights = model.state_dict() 
 
             model.load_state_dict(torch.load(client.model_folder + "/" + client.model_name))
             check_model_similarity(temp1, model)
