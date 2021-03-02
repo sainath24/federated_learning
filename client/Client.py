@@ -42,6 +42,7 @@ class Client:
         self.config = config
         self.HOST = self.config["HOST"]
         self.PORT = self.config["PORT"]
+        self.token = ''
 
         # MODEL FOLDER
         try:
