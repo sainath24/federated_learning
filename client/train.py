@@ -70,20 +70,17 @@ def train_last_uga(initial_model_weights, model, train_loader, optimizer, criter
         loss_with_graph.data = loss.data
         loss_with_graph.backward()
 
-
         tr_loss += loss.item()
 
         # scaler.step(optimizer)
         optimizer.step()
+        initial_model_weights = model.state_dict()
         model.load_state_dict(temp_state_dict)
         optimizer.step()
         
-
-
-
         # Updates the scale for next iteration.
         # scaler.update()
-        
+    model.load_state_dict(initial_model_weights)
     return tr_loss #.item()
 
 
