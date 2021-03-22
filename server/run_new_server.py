@@ -13,4 +13,6 @@ try:
     os.removedirs("CLIENT_UPDATES")
 except:
     pass
+if not os.path.exists("GLOBAL"):
+    os.makedirs("GLOBAL/")
 os.system("python Server.py")

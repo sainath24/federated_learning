@@ -76,10 +76,10 @@ def get_classification_dataset(
         debug=debug,
     )
     train_loader = data.DataLoader(
-        train_dataset, batch_size=train_bs, shuffle=True, num_workers=4
+        train_dataset, batch_size=train_bs, shuffle=True, num_workers=0
     )
     test_loader = data.DataLoader(
-        test_dataset, batch_size=test_bs, shuffle=False, num_workers=4
+        test_dataset, batch_size=test_bs, shuffle=False, num_workers=0
     )
 
     return train_loader, test_loader
@@ -92,7 +92,7 @@ class ObjectDetectionDataset(data.Dataset):
             self.data = pd.read_csv(csv_file).head(50)
         else:
             self.data = pd.read_csv(csv_file)
-        self.image_ids = self.data['patientId'].unique()
+        self.image_ids = self.data["patientId"].unique()
         self.image_dir = path
         self.transforms = transform
 
@@ -102,21 +102,19 @@ class ObjectDetectionDataset(data.Dataset):
     def __getitem__(self, index: int):
 
         image_id = self.image_ids[index]
-        records = self.data[self.data['patientId'] == image_id]
+        records = self.data[self.data["patientId"] == image_id]
         target_present = records["Target"].values[0]
 
-        image = cv2.imread(
-            f'{self.image_dir}/{image_id}.jpg', cv2.IMREAD_COLOR)
+        image = cv2.imread(f"{self.image_dir}/{image_id}.jpg", cv2.IMREAD_COLOR)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB).astype(np.float32)
         image /= 255.0
         if target_present == 1:
 
-            boxes = records[['x', 'y', 'width', 'height']].values
+            boxes = records[["x", "y", "width", "height"]].values
             boxes[:, 2] = boxes[:, 0] + boxes[:, 2]
             boxes[:, 3] = boxes[:, 1] + boxes[:, 3]
 
-            area = (boxes[:, 3] - boxes[:, 1]) * \
-                (boxes[:, 2] - boxes[:, 0])
+            area = (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 2] - boxes[:, 0])
             area = torch.as_tensor(area, dtype=torch.float32)
 
             # there is only one class
@@ -126,11 +124,11 @@ class ObjectDetectionDataset(data.Dataset):
             iscrowd = torch.zeros((records.shape[0],), dtype=torch.int64)
 
             target = {}
-            target['boxes'] = boxes
-            target['labels'] = labels
-            target['patientId'] = torch.tensor([index])
-            target['area'] = area
-            target['iscrowd'] = iscrowd
+            target["boxes"] = boxes
+            target["labels"] = labels
+            target["patientId"] = torch.tensor([index])
+            target["area"] = area
+            target["iscrowd"] = iscrowd
         else:
 
             boxes = torch.zeros((0, 4), dtype=torch.float32)
@@ -140,25 +138,26 @@ class ObjectDetectionDataset(data.Dataset):
             target["labels"] = labels
             target["patientId"] = torch.tensor([index])
             target["area"] = torch.as_tensor(
-                (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 2] - boxes[:, 0]), dtype=torch.float32)
+                (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 2] - boxes[:, 0]),
+                dtype=torch.float32,
+            )
             target["iscrowd"] = torch.zeros((0,), dtype=torch.int64)
 
         if self.transforms:
-            sample = {
-                'image': image,
-                'bboxes': target['boxes'],
-                'labels': labels
-            }
+            sample = {"image": image, "bboxes": target["boxes"], "labels": labels}
             sample = self.transforms(**sample)
-            image = sample['image']
+            image = sample["image"]
             if target_present:
-                target['boxes'] = torch.stack(
-                    tuple(map(torch.FloatTensor, zip(*sample['bboxes'])))).permute(1, 0)
+                target["boxes"] = torch.stack(
+                    tuple(map(torch.FloatTensor, zip(*sample["bboxes"])))
+                ).permute(1, 0)
 
         return image, target, image_id
 
+
 def collate_func(batch):
     return tuple(zip(*batch))
+
 
 def get_detection_dataset(
     train_csv_file,
@@ -173,25 +172,26 @@ def get_detection_dataset(
 ):
 
     train_dataset = ObjectDetectionDataset(
-        csv_file=train_csv_file,
-        path=train_path, 
-        transform=train_transform, 
-        debug=False
+        csv_file=train_csv_file, path=train_path, transform=train_transform, debug=False
     )
 
     test_dataset = ObjectDetectionDataset(
-        csv_file=test_csv_file,
-        path=test_path,
-        transform=test_transform,
-        debug=False
+        csv_file=test_csv_file, path=test_path, transform=test_transform, debug=False
     )
-
 
     train_loader = data.DataLoader(
-        train_dataset, batch_size=train_bs, shuffle=True, num_workers=4, collate_fn=collate_func
+        train_dataset,
+        batch_size=train_bs,
+        shuffle=True,
+        num_workers=4,
+        collate_fn=collate_func,
     )
     test_loader = data.DataLoader(
-        test_dataset, batch_size=test_bs, shuffle=False, num_workers=4, collate_fn=collate_func
+        test_dataset,
+        batch_size=test_bs,
+        shuffle=False,
+        num_workers=4,
+        collate_fn=collate_func,
     )
 
     return train_loader, test_loader

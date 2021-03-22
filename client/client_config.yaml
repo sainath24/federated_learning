@@ -1,8 +1,8 @@
 # CONFIGURATION FILE FOR CLIENT
 
 mode: "classification" # choices: classification, detection
-send_after_epoch: 3 # Integer that signifies when to send update to server
-weight_update: "uga" # choices: uga (Unbiased Gradient Aggregation), normal (Normal Backpropagation)
+send_after_epoch: 1 # Integer that signifies when to send update to server
+weight_update: "normal" # choices: uga (Unbiased Gradient Aggregation), normal (Normal Backpropagation)
 
 # MODEL
 model_folder: CLIENT_MODEL
@@ -10,8 +10,8 @@ model_name: client.pth
 arch: "resnet18"
 
 # IP
-HOST: "127.0.0.1"
-PORT: 9865
+HOST: "http://127.0.0.1"
+PORT: "9865"
 
 #CLIENT PORT
 CLIENT_PORT: 52475
@@ -27,22 +27,19 @@ labels:
   ]
 n_classes: 6 # should match len(labels)
 
-# TRANSFORMS
-# TODO
-
 # TRAINING
-train_csv_file: ""
-train_image_dir: ""
-train_batch_size: 64
+train_csv_file: "C:/Users/rohit/Desktop/ML/federated_learning/data/client1_train.csv.gz"
+train_image_dir: "C:/Users/rohit/Desktop/ML/federated_learning/data/sample_images"
+train_batch_size: 16
 
 # PARAMS
-epochs: 15
+epochs: 2
 lr: 0.00002
 device: "cuda" # choices: cpu, cuda
 optimizer: "Adam" # choices: Adam, SGD
 
 # TESTING
-test_csv_file: ""
-test_image_dir: ""
+test_csv_file: "C:/Users/rohit/Desktop/ML/federated_learning/data/client1_train.csv.gz"
+test_image_dir: "C:/Users/rohit/Desktop/ML/federated_learning/data/sample_images"
 test: False # need to see logic, idea is to use when only training and not validating
 test_batch_size: 1
