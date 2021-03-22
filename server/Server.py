@@ -298,8 +298,8 @@ class Server:
             # CHECK TIME DIFFERENCE
             heartbeat_time = self.client_info[key]['time']
             diff = current_time - heartbeat_time
-            
-            if diff > 10: # 10 seconds
+
+            if diff > 10 and self.client_info[key]['condition'] != 'Alive': # 10 seconds
                 self.client_info[key]['condition'] = 'Dead'
 
 

@@ -103,6 +103,12 @@ def main():
     client = Client.Client(config)
     print("\nCONNECTED TO SERVER")
     client.data_length = len(train_loader.dataset)
+
+    heartbeat = Heartbeat(client, config)
+    heartbeat.set_data_length(client.data_length)
+    heartbeat.set_status(values.client_receiving_model)
+    heartbeat.scheduler(client)
+
     result = client.get()
 
     if result == False: # COULD NOT GET MODEL
@@ -110,9 +116,6 @@ def main():
         exit()
     print("\nSAVED GLOBAL MODEL")
 
-    heartbeat = Heartbeat(client, config)
-    heartbeat.set_data_length(client.data_length)
-    heartbeat.scheduler(client)
 
     model.load_state_dict(torch.load(client.model_folder + "/" + client.model_name))
 
