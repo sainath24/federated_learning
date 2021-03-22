@@ -40,6 +40,10 @@ NO_MODEL_UPDATE_AVAILABLE = 'NO_UPDATE_AVAILABLE'
 REQUIRES_TOKEN = "0000000000000000"
 client_receive_model_success = "MODEL_RECEIVED"
 client_received_message = "CLIENT_OK"
+client_sending_model = "SENDING_MODEL"
+client_send_model_success = "MODEL_SENT"
+client_receiving_model = "RECEIVING_MODEL"
+client_waiting = "CLIENT_WAITING"
 
 client_connection_success = "CONNECTED TO SERVER"
 client_connection_fail_retry = "CONNECTION TO SERVER FAILED, RETRYING..."

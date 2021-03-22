@@ -20,13 +20,11 @@ from copy import deepcopy
 from torch.utils.data import Subset
 
 import threading
-global heartbeat_thread
-def heartbeat_scheduler(client):
-    status = client.send_heartbeat_to_server()
-    heartbeat_thread = threading.Timer(5.0, heartbeat_scheduler, (client,))
-    heartbeat_thread.daemon = True
-    heartbeat_thread.start()
+from Heartbeat import Heartbeat
 
+import sys
+sys.path.append("../")
+import values
 
 def check_model_similarity(model1, model2):
     """
@@ -103,14 +101,18 @@ def main():
         model = m.ClassificationModel(config["arch"], n_classes)
 
     client = Client.Client(config)
-    heartbeat_scheduler(client);
     print("\nCONNECTED TO SERVER")
     client.data_length = len(train_loader.dataset)
     result = client.get()
+
     if result == False: # COULD NOT GET MODEL
         print('\nCOULD NOT GET MODEL FROM SERVER')
         exit()
     print("\nSAVED GLOBAL MODEL")
+    
+    heartbeat = Heartbeat(client, config)
+    heartbeat.set_data_length(client.data_length)
+    heartbeat.scheduler(client)
 
     model.load_state_dict(torch.load(client.model_folder + "/" + client.model_name))
 
@@ -132,7 +134,8 @@ def main():
 
     
     for epoch in range(epochs):
-
+        heartbeat.set_current_epoch(epoch + 1)
+        heartbeat.set_condition(values.client_receive_model_success)
         print("Epoch {}/{}".format(epoch, epochs - 1))
         print("-" * 10)
         running_loss = 0
@@ -165,18 +168,21 @@ def main():
         torch.save(model.state_dict(), client.model_folder + "/" + client.model_name)
 
         if (epoch+1) % send_after_epoch == 0: # SEND TO SERVER
+            heartbeat.set_condition(values.client_sending_model)
             result = client.send()
             if result == False:
                 print('\nCOULD NOT SEND TO SERVER')
                 exit()
 
             # CHECK FOR UPDATES
+            heartbeat.set_condition(values.client_waiting)
             result = client.check_update()
             while result == False:
                 print("\nSERVER HAS NOT UPDATED GLOBAL")
                 sleep(30)
                 result = client.check_update()
 
+            heartbeat.set_condition(values.client_receiving_model)
             result = client.get() # GET UPDATED MODEL
             if result == False:
                 print('\nCOULD NOT GET MODEL FROM SERVER')

@@ -6,6 +6,7 @@ from werkzeug.datastructures import Headers
 import yaml
 import os
 import pickle
+import json
 
 import re
 import traceback
@@ -214,11 +215,11 @@ class Client:
         else:
             return False
 
-    def send_heartbeat_to_server(self):
+    def send_heartbeat_to_server(self,msg):
         try:
             url = self.url + '/send_heartbeat'
             header = {'Token': self.token}
-            response = requests.post(url, headers = header)
+            response = requests.post(url, headers = header, data=msg)
             if response.text == values.OK_STATUS:
                 return True
             else:

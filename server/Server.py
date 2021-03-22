@@ -23,6 +23,7 @@ from torch import nn, optim
 from os import path
 import traceback
 import re
+import json
 
 from flask import Flask, request, send_file, make_response
 import auth
@@ -113,7 +114,7 @@ def receive_model():
     response = make_response()
     valid = auth.check_token_validity(token, server.get_client_data())
     if valid: # RECEIVE MODEL
-        print('\nVALID CLIENT\n')
+        # print('\nVALID CLIENT\n')
         model = request.files['model']
         print('\nGOT MODEL FROM REQUEST\n')
         path_to_save = os.path.join(server.client_updates_path, token + ".pth")
@@ -123,7 +124,7 @@ def receive_model():
         # if len(model.read()) == int(file_size): # MODEL IS OK
         # thread = threading.Thread(target = save_model, args=[token, model, path_to_save]).start()
         model.save(path_to_save)
-        print('\nMODEL SAVED\n')
+        print('\nMODEL SAVED')
         server.server_receive_ok(token)
         response.status_code = values.OK_STATUS
         # else:
@@ -170,6 +171,10 @@ def send_heartbeat():
     valid = auth.check_token_validity(token, server.get_client_data())
     if valid:
         print(token," client is alive.")
+        info = request.data
+        # UPDATE CLIENT INFO
+        server.client_info[token] = info
+
         response = make_response()
         response.status_code = values.OK_STATUS 
     else: # INVALID CLIENT
@@ -177,6 +182,14 @@ def send_heartbeat():
         response.status_code = values.INVALID_CLIENT
     return response
 
+@app.route('/get_client_info_json', methods = ['GET'])
+def send_client_info_json():
+    return json.dumps(server.client_info)
+
+@app.route('/get_server_info_json', methods = ['GET'])
+def send_server_info_json():
+    info = server.get_server_info_as_dict()
+    return json.dumps(info)
 
 class Server:
     def __init__(self, config):
@@ -186,6 +199,8 @@ class Server:
         self.lock = threading.Lock()
         self.global_update = False
         self.mode = config["mode"]
+        self.name = config["name"]
+        self.arch = config["arch"]
 
         # OPEN TOKEN DATA
         if os.path.isfile(values.TOKEN_FILE):  # TOKENS FILE EXISTS
@@ -202,6 +217,8 @@ class Server:
             self.client_data = {}  # STORE CLIENT INFO
 
         self.client_data_length = {}
+
+        self.client_info = {}
 
         print("\nINITIALISING SERVER...")
 
@@ -255,9 +272,24 @@ class Server:
         self.aggregation = self.config['aggregation']
         # NO OF ROUNDS OF FL
         self.rounds = self.config['rounds']
+        self.total_rounds = self.config['rounds']
         
         print("\nSERVER INITIALISED")
 
+    def get_server_info_as_dict(self):
+        info = {}
+        info['name'] = self.name
+        info['model_path'] = self.model_path
+        info['client_updates_path'] = self.client_updates_path
+        info['mode'] = self.mode
+        info['host'] = self.HOST
+        info['port'] = self.PORT
+        info['architecture'] = self.arch
+        info['aggregation'] = self.aggregation
+        info['fl_rounds'] = self.total_rounds
+        info['fl_rounds_left'] = self.rounds
+        return info
+    
     def save_tokens(self):
         with open("tokens.pkl", "wb") as file:
             pickle.dump(self.tokens, file)
