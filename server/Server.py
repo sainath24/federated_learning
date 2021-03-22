@@ -11,6 +11,7 @@ import torchvision
 import torch
 
 import select
+import time
 
 import model as m
 import numpy as np
@@ -184,6 +185,7 @@ def send_heartbeat():
 
 @app.route('/get_client_info_json', methods = ['GET'])
 def send_client_info_json():
+    server.set_client_heartbeat_status()
     return json.dumps(server.client_info)
 
 @app.route('/get_server_info_json', methods = ['GET'])
@@ -290,6 +292,17 @@ class Server:
         info['fl_rounds_left'] = self.rounds
         return info
     
+    def set_client_heartbeat_status(self):
+        current_time = time.time()
+        for key in self.client_info.keys():
+            # CHECK TIME DIFFERENCE
+            heartbeat_time = self.client_info[key]['time']
+            diff = current_time - heartbeat_time
+            
+            if diff > 10: # 10 seconds
+                self.client_info[key]['condition'] = 'Dead'
+
+
     def save_tokens(self):
         with open("tokens.pkl", "wb") as file:
             pickle.dump(self.tokens, file)
