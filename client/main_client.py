@@ -109,7 +109,7 @@ def main():
         print('\nCOULD NOT GET MODEL FROM SERVER')
         exit()
     print("\nSAVED GLOBAL MODEL")
-    
+
     heartbeat = Heartbeat(client, config)
     heartbeat.set_data_length(client.data_length)
     heartbeat.scheduler(client)
@@ -135,7 +135,7 @@ def main():
     
     for epoch in range(epochs):
         heartbeat.set_current_epoch(epoch + 1)
-        heartbeat.set_condition(values.client_receive_model_success)
+        heartbeat.set_status(values.client_receive_model_success)
         print("Epoch {}/{}".format(epoch, epochs - 1))
         print("-" * 10)
         running_loss = 0
@@ -168,21 +168,21 @@ def main():
         torch.save(model.state_dict(), client.model_folder + "/" + client.model_name)
 
         if (epoch+1) % send_after_epoch == 0: # SEND TO SERVER
-            heartbeat.set_condition(values.client_sending_model)
+            heartbeat.set_status(values.client_sending_model)
             result = client.send()
             if result == False:
                 print('\nCOULD NOT SEND TO SERVER')
                 exit()
 
             # CHECK FOR UPDATES
-            heartbeat.set_condition(values.client_waiting)
+            heartbeat.set_status(values.client_waiting)
             result = client.check_update()
             while result == False:
                 print("\nSERVER HAS NOT UPDATED GLOBAL")
                 sleep(30)
                 result = client.check_update()
 
-            heartbeat.set_condition(values.client_receiving_model)
+            heartbeat.set_status(values.client_receiving_model)
             result = client.get() # GET UPDATED MODEL
             if result == False:
                 print('\nCOULD NOT GET MODEL FROM SERVER')
