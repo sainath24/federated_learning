@@ -33,7 +33,7 @@ train_image_dir: "C:/Users/rohit/Desktop/ML/federated_learning/data/sample_image
 train_batch_size: 16
 
 # PARAMS
-epochs: 2
+epochs: 30
 lr: 0.00002
 device: "cuda" # choices: cpu, cuda
 optimizer: "Adam" # choices: Adam, SGD

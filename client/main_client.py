@@ -96,7 +96,7 @@ def main():
             test_transform=t.transform_test,
             test_labels=[],
             test_bs=config["test_batch_size"],
-            debug=False,
+            debug=True,
         )
         model = m.ClassificationModel(config["arch"], n_classes)
 

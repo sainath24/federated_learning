@@ -182,10 +182,12 @@ def check_update():
 @app.route("/send_heartbeat", methods=["POST"])
 def send_heartbeat():
     token = request.headers["Token"]
+    print("\n\nREQUEST:", request)
+    print("request.data:", request.json)
     valid = auth.check_token_validity(token, server.get_client_data())
     if valid:
         print(token, " client is alive.")
-        info = request.data
+        info = request.json
         # UPDATE CLIENT INFO
         server.client_info[token] = info
 
@@ -310,7 +312,9 @@ class Server:
 
     def set_client_heartbeat_status(self):
         current_time = time()
+        print(self.client_info)
         for key in self.client_info.keys():
+            print("CLIENT INFO TIME:", self.client_info[key])
             # CHECK TIME DIFFERENCE
             heartbeat_time = self.client_info[key]["time"]
             diff = current_time - heartbeat_time
