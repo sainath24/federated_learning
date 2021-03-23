@@ -7,6 +7,7 @@ import { green, red } from "@material-ui/core/colors";
 import AppBar from "@material-ui/core/AppBar";
 import Toolbar from "@material-ui/core/Toolbar";
 import Typography from "@material-ui/core/Typography";
+import CircularProgress from "@material-ui/core/CircularProgress";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
 
@@ -183,6 +184,13 @@ class App extends Component {
     );
   }
 
+  renderLoadingScreen() {
+    return (
+      <div style={{ diplay: "flex" }}>
+        <CircularProgress color="primary" />
+      </div>
+    );
+  }
   render() {
     return (
       // The rest of the file is the same
@@ -193,6 +201,9 @@ class App extends Component {
               <Typography variant="h6">Federated Learning UI</Typography>
             </Toolbar>
           </AppBar>
+          {this.state.server_data === null && this.state.client_data === null
+            ? this.renderLoadingScreen()
+            : null}
           {this.state.server_data ? this.renderServer() : null}
           {this.state.client_data ? this.renderClients() : null}
         </header>
