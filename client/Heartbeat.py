@@ -14,6 +14,7 @@ class Heartbeat:
         self.heartbeat['data_length'] = 0
         self.heartbeat['status'] = 'get_model'
         self.heartbeat['time'] = 0
+        self.heartbeat["exception"] = ''
         self.thread = None
 
     def set_current_epoch(self, epoch):
@@ -30,6 +31,9 @@ class Heartbeat:
     
     def set_data_length(self, length):
         self.heartbeat['data_length'] = length
+    
+    def set_exception(self, exception):
+        self.heartbeat['exception'] = exception
 
     def scheduler(self,client):
         self.set_time()

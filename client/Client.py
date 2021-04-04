@@ -230,3 +230,12 @@ class Client:
             print("\nEXCEPTION in send: ", e)
             traceback.print_exc()
 
+    def get_current_epoch_for_client(self):
+        url = self.url + "/get_current_epoch_for_client"
+        header = {"Token": self.token}
+        response = requests.get(url, headers=header)
+        if response.status_code == values.OK_STATUS:
+            return int(response.headers["current_epoch"])
+        else:
+            return 1
+

@@ -100,16 +100,26 @@ def main():
         )
         model = m.ClassificationModel(config["arch"], n_classes)
 
+    global client
     client = Client.Client(config)
     print("\nCONNECTED TO SERVER")
     client.data_length = len(train_loader.dataset)
 
+    global heartbeat 
     heartbeat = Heartbeat(client, config)
     heartbeat.set_data_length(client.data_length)
     heartbeat.set_status(values.client_receiving_model)
-    heartbeat.scheduler(client)
+    
 
     result = client.get()
+
+    current_epoch_for_client = client.get_current_epoch_for_client()
+    #logic to resume if send after epoch is not 
+    current_epoch_for_client = current_epoch_for_client - (current_epoch_for_client % send_after_epoch)
+
+    heartbeat.set_current_epoch(current_epoch_for_client)
+
+    heartbeat.scheduler(client)
 
     if result == False: # COULD NOT GET MODEL
         print('\nCOULD NOT GET MODEL FROM SERVER')
@@ -136,8 +146,8 @@ def main():
     time0 = time()
 
     
-    for epoch in range(epochs):
-        heartbeat.set_current_epoch(epoch + 1)
+    for epoch in range(current_epoch_for_client, epochs):
+        heartbeat.set_current_epoch(epoch)
         heartbeat.set_status(values.client_receive_model_success)
         print("Epoch {}/{}".format(epoch, epochs - 1))
         print("-" * 10)
@@ -204,9 +214,20 @@ def main():
 if __name__ == "__main__":
     try:
         main()
+        heartbeat.set_condition("Completed")
+        heartbeat.set_status("FL Completed")
+        client.send_heartbeat_to_server(heartbeat.heartbeat)
         exit(0)
+    except KeyboardInterrupt as e:
+        traceback.print_exc()
+        heartbeat.set_exception("KeyboardInterrupt")
+        heartbeat.set_condition("Dead")
+        client.send_heartbeat_to_server(heartbeat.heartbeat)
     except Exception as e:
         traceback.print_exc()
+        heartbeat.set_exception(str(e))
+        heartbeat.set_condition("Dead")
+        client.send_heartbeat_to_server(heartbeat.heartbeat)
         exit(1)
         
 

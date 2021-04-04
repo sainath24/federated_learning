@@ -113,6 +113,26 @@ def send_model():
 
     return response
 
+@app.route("/get_current_epoch_for_client", methods=["GET"])
+def get_epochs_left_for_client():
+    token = request.headers["Token"]
+    valid = auth.check_token_validity(token, server.get_client_data())
+    if valid:  # SEND MODEL
+        try:
+            current_epoch_for_client = server.client_info[token]["current_epoch"]
+        except: ## case of initial client connection
+            current_epoch_for_client=0
+        response = make_response()
+        response.headers["Token"] = values.receive_token_valid
+        response.headers["current_epoch"] = str(current_epoch_for_client)
+        response.status_code = values.OK_STATUS
+
+    else:
+        response = make_response()
+        response.status_code = values.INVALID_CLIENT
+        response.headers["Token"] = values.receive_token_invalid
+
+    return response
 
 def save_model(token, file, path):
     file.save(path)
@@ -318,11 +338,12 @@ class Server:
             # CHECK TIME DIFFERENCE
             heartbeat_time = self.client_info[key]["time"]
             diff = current_time - heartbeat_time
-
+            print(diff)
             if (
-                diff > 10 and self.client_info[key]["condition"] != "Alive"
+                diff > 10 and self.client_info[key]["condition"] == "Alive"
             ):  # 10 seconds
                 self.client_info[key]["condition"] = "Dead"
+                self.client_info[key]["exception"] = "Client Unexpectedly Closed, No Exception Message Received"
 
     def save_tokens(self):
         with open("tokens.pkl", "wb") as file:
@@ -361,8 +382,8 @@ class Server:
             self.global_update = True
         print("\nFL ROUNDS LEFT: ", (self.rounds))  # TEMP
         if self.rounds < 0:
-            print("FL COMPLETED")
-            exit()
+            print("FL COMPLETED-----------------------------")
+            #exit()
 
     def client_receive_ok(self, token):
         self.lock.acquire()  # BLOCKS UNTIL LOCK IS ACQUIRED

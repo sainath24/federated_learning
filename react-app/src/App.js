@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { fetchOptions } from "./utils";
-import { ProgressBar, Figure, Card, CardGroup } from "react-bootstrap";
+import { ProgressBar, Card, CardDeck } from "react-bootstrap";
 import Chip from "@material-ui/core/Chip";
 import FiberManualRecordIcon from "@material-ui/icons/FiberManualRecord";
 import { green, red } from "@material-ui/core/colors";
@@ -107,17 +107,18 @@ class App extends Component {
 
     return (
       <div className="client">
-        <CardGroup>
+        <CardDeck>
           {Object.entries(client_data).map(([key, value]) => {
             console.log(key, client_data[key]);
-            const current_epoch = value["current_epoch"];
+            const current_epoch = value["current_epoch"] + 1;
             const total_epochs = value["total_epochs"];
             const completed = (current_epoch / total_epochs) * 100;
             const condition = value["condition"];
             const status = value["status"];
+            const exception = value["exception"];
             return (
               <div>
-                <Card style={{ width: "18rem" }}>
+                <Card className="mb-4" style={{ width: "18rem" }}>
                   <Card.Img
                     variant="top"
                     src="hospital.png"
@@ -126,9 +127,10 @@ class App extends Component {
                   />
                   <Card.Body>
                     <Card.Title>{key}</Card.Title>
-                    {condition === "Alive"
+                    {condition === "Alive" ||condition === 'Completed'
                       ? this.getActiveChip()
                       : this.getInactiveChip()}
+                    {condition === "Dead"? <div class='error'><Card.Text>{exception}</Card.Text></div> : <Card.Text></Card.Text>}
                     <Card.Text>{status}</Card.Text>
                     {completed === 100
                       ? this.completedProgressBar(
@@ -148,7 +150,7 @@ class App extends Component {
               </div>
             );
           })}
-        </CardGroup>
+        </CardDeck>
       </div>
     );
   }
@@ -157,12 +159,15 @@ class App extends Component {
     const { server_data } = this.state;
     const key = "server";
     const total_rounds = server_data["fl_rounds"];
-    const fl_rounds_left = server_data["fl_rounds_left"];
+    let fl_rounds_left = server_data["fl_rounds_left"];
+    if ( fl_rounds_left < 0 ) {
+      fl_rounds_left = 0;
+    }
     const completed = ((total_rounds - fl_rounds_left) / total_rounds) * 100;
     return (
       <div className="server">
         <Card style={{ width: "18rem" }}>
-          <Card.Img variant="top" src="server.png" width={250} height={325} />
+          <Card.Img variant="top" src="server.png" width={250} height={300} />
           <Card.Body>
             <Card.Title>Server</Card.Title>
             {completed === 100

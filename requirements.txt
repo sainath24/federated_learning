@@ -1,10 +1,11 @@
 albumentations
+flask
 numpy
 pandas
 Pillow
 PyYAML
 tensorboard
 timm
-torch
-torchvision
+#torch
+#torchvision
 tqdm
