@@ -22,7 +22,9 @@ This is an easy to use framework for federated learning along with a react ui fo
     
 #### If a client crashes, do not panic. Instead take a chill pill and run 'python main_client.py' to resume the client and continue from the most recent fl round.
 
-![wegotchu](assets/dontpanic.gif)
+<p align="center">
+  <img src="assets/dontpanic.gif" />
+</p>
 
 
 
