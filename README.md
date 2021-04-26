@@ -20,11 +20,12 @@ This is an easy to use framework for federated learning along with a react ui fo
 8.  Start the server by running `python run_new_server.py`
 9.  To start a client, cd to the client directory and run `python run_new_client.py` to start a new client
     
-#### If a client crashes, do not panic. Instead take a chill pill and run 'python main_client.py' to resume the client and continue from the most recent fl round.
+<!-- #### If a client crashes, do not panic. Instead take a chill pill and run 'python main_client.py' to resume the client and continue from the most recent fl round. -->
+#### If a client crashes, run 'python main_client.py' to resume the client and continue from the most recent fl round.
 
-<p align="center">
+<!-- <p align="center">
   <img src="assets/dontpanic.gif" />
-</p>
+</p> -->
 
 
 
