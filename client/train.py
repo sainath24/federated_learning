@@ -67,7 +67,7 @@ def train_last_uga(initial_model_weights, model, train_loader, optimizer, criter
         outputs = model(inputs)
         loss_with_graph = criterion(outputs, labels)
 
-        loss_with_graph.data = loss.data
+        loss_with_graph = loss_with_graph/loss_with_graph.data * loss.data
         loss_with_graph.backward()
 
         tr_loss += loss.item()
