@@ -131,7 +131,7 @@ def main():
 
     # MAKE A COPY OF INITIAL MODEL WEIGHTS IF WEIGHT UPDATE IS UGA
     if weight_update == "uga": 
-        initial_model_weights = model.state_dict()
+        initial_model_weights = deepcopy(model.state_dict())
 
     criterion = torch.nn.BCEWithLogitsLoss()
     optim_params = [{"params": model.parameters(), "lr": lr}]
@@ -192,7 +192,7 @@ def main():
             result = client.check_update()
             while result == False:
                 print("\nSERVER HAS NOT UPDATED GLOBAL")
-                sleep(30)
+                sleep(1)
                 result = client.check_update()
 
             heartbeat.set_status(values.client_receiving_model)

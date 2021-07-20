@@ -4,6 +4,7 @@ defines the training loop.
 
 from tqdm import tqdm
 import torch
+from copy import deepcopy
 
 
 def classification_train(model, train_loader, optimizer, criterion, device):
@@ -61,7 +62,7 @@ def train_last_uga(initial_model_weights, model, train_loader, optimizer, criter
         loss = criterion(outputs, labels)
 
         # UGA STUFF
-        temp_state_dict = model.state_dict()
+        temp_state_dict = deepcopy(model.state_dict())
         model.load_state_dict(initial_model_weights)
 
         outputs = model(inputs)
@@ -74,7 +75,7 @@ def train_last_uga(initial_model_weights, model, train_loader, optimizer, criter
 
         # scaler.step(optimizer)
         optimizer.step()
-        initial_model_weights = model.state_dict()
+        initial_model_weights = deepcopy(model.state_dict())
         model.load_state_dict(temp_state_dict)
         optimizer.step()
         
