@@ -206,7 +206,7 @@ def main():
 
             # RESET INTIAL WEIGHTS FOR UGA TO NEW MODEL
             if weight_update == "uga": 
-                initial_model_weights = model.state_dict() 
+                initial_model_weights = deepcopy(model.state_dict()) 
 
     print("\nTraining Time (in minutes) =", (time() - time0) / 60)
 
